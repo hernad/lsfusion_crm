@@ -341,37 +341,37 @@ FORM issuance
     FILTERS EVAT(rosterItem) = e
 ;
 
-exportToXml 'Экспорт ЭСЧФ' () {
-    NEWSESSION NESTED LOCAL { 
-        FOR in(EVAT e) DO {
-            dateIssuance() <- STRING[10] ([FORMULA 'to_char(($1),($2))'](currentDate(), 'YYYY-MM-DD'));
-            dateTransaction() <- STRING[10] ([FORMULA 'to_char(($1),($2))'](dateDoc(e), 'YYYY-MM-DD'));
-            dateContract() <- STRING[10] ([FORMULA 'to_char(($1),($2))'](dateContract(e), 'YYYY-MM-DD'));
-            dateDoc() <- STRING[10] ([FORMULA 'to_char(($1),($2))'](dateDoc(e), 'YYYY-MM-DD'));
+exportToXml 'Export ESCF' () {
+    NEWSESSION NESTED LOCAL {
+        FOR in (EVAT e) DO {
+            dateIssuance () <- STRING [10] ([FORMULA 'to_char (($ 1), ($ 2))'] (currentDate (), 'YYYY-MM-DD'));
+            dateTransaction () <- STRING [10] ([FORMULA 'to_char (($ 1), ($ 2))'] (dateDoc (e), 'YYYY-MM-DD'));
+            dateContract () <- STRING [10] ([FORMULA 'to_char (($ 1), ($ 2))'] (dateContract (e), 'YYYY-MM-DD'));
+            dateDoc () <- STRING [10] ([FORMULA 'to_char (($ 1), ($ 2))'] (dateDoc (e), 'YYYY-MM-DD'));
             
-            exported(e) <- TRUE;
-            in(e) <- NULL;
+            exported (e) <- TRUE;
+            in (e) <- NULL;
             
-            documentType(e) <- 'ORIGINAL';
-            legalEntityStatusCustomer(e) <- 'CUSTOMER';
-            countryCodeCustomer(e) <- '112';
+            documentType (e) <- 'ORIGINAL';
+            legalEntityStatusCustomer (e) <- 'CUSTOMER';
+            countryCodeCustomer (e) <- '112';
             
-            legalEntityStatusSupplier(e) <- 'SELLER';
-            countryCodeSupplier(e) <- '112';
+            legalEntityStatusSupplier (e) <- 'SELLER';
+            countryCodeSupplier (e) <- '112';
             
-            codeDocType(e) <- 606;
+            codeDocType (e) <- 606;
             
-            blankCodeDoc(e) <- '';
-            seriesDoc(e) <- '';
+            blankCodeDoc (e) <- '';
+            seriesDoc (e) <- '';
             
             EXPORT issuance OBJECTS e = e XML TO System.exportFile;
-            zipping(STRING[100] s) <- exportFile() WHERE s = exportFileXml(e);
+            zipping (STRING [100] s) <- exportFile () WHERE s = exportFileXml (e);
             
         }
-        makeZipFile();
-        open(zipped(), 'evat');
+        makeZipFile ();
+        open (zipped (), 'evat');
 
-        APPLY ;
+        APPLY;
     }
 }
 EXTEND FORM EVATs PROPERTIES() TOOLBAR exportToXml;
