@@ -4,81 +4,81 @@ REQUIRE TimeEntry, ProjectExternal;
 
 NAMESPACE Project;
 
-daysImportTimeEntry 'За сколько дней импортировать отметки времени' = DATA INTEGER ();
+daysImportTimeEntry 'How many days to import timestamps' = DATA INTEGER ();
 
-EXTEND FORM options PROPERTIES daysImportTimeEntry();
-DESIGN options { commons { MOVE PROPERTY (daysImportTimeEntry()); } }
+EXTEND FORM options PROPERTIES daysImportTimeEntry ();
+DESIGN options {commons {MOVE PROPERTY (daysImportTimeEntry ()); }}
 
-importTimeEntry 'Импорт отметок времени' (External e) {
+importTimeEntry 'Import time stamps' (External e) {
     NEWSESSION {
-        LOCAL id = INTEGER(INTEGER);
-        LOCAL hours = NUMERIC[5,2] (INTEGER);
+        LOCAL id = INTEGER (INTEGER);
+        LOCAL hours = NUMERIC [5,2] (INTEGER);
         LOCAL comments = TEXT (INTEGER);
         LOCAL spent_on = DATE (INTEGER);
-        LOCAL activity_name = STRING[100] (INTEGER);
+        LOCAL activity_name = STRING [100] (INTEGER);
         LOCAL project_id = INTEGER (INTEGER);
         LOCAL login = TEXT (INTEGER);
         LOCAL issue_id = INTEGER (INTEGER);
-        LOCAL message = STRING[1000] ();
+        LOCAL message = STRING [1000] ();
         LOCAL count = INTEGER ();
             
         LOCAL file = FILE ();
-        EXTERNAL SQL path(e) EXEC 'SELECT time_entries.id, hours, comments, spent_on, activities.name AS activity_name, time_entries.project_id, users.login, issue_id FROM time_entries LEFT JOIN users ON time_entries.user_id = users.id LEFT JOIN enumerations activities ON time_entries.activity_id = activities.id' TO file;
+        EXTERNAL SQL path (e) EXEC 'SELECT time_entries.id, hours, comments, spent_on, activities.name AS activity_name, time_entries.project_id, users.login, issue_id FROM time_entries LEFT JOIN users ON time_entries.user_id = users.id LEFT JOIN enumerations activities ON time_entries.activity_id = activities.id 'TO file;
         
-        IMPORT TABLE FROM file() TO id, hours, comments, spent_on, activity_name, project_id, login, issue_id;
+        IMPORT TABLE FROM file () TO id, hours, comments, spent_on, activity_name, project_id, login, issue_id;
         
-        FOR INTEGER ii = [GROUP MIN INTEGER i IF NOT daysBetweenDates(currentDate(), spent_on(i)) > daysImportTimeEntry() BY STRING[15](id(i))](STRING[15] id)
-            AND id != '' AND NOT timeEntry(id, e) DO NEW s = TimeEntry {
-            id(s) <- id;
-            external(s) <- e;
+        FOR INTEGER ii = [GROUP MIN INTEGER i IF NOT daysBetweenDates (currentDate (), spent_on (i))> daysImportTimeEntry () BY STRING [15] (id (i))] (STRING [15] id)
+            AND id! = '' AND NOT timeEntry (id, e) DO NEW s = TimeEntry {
+            id (s) <- id;
+            external (s) <- e;
         }
         
-        FOR TimeEntry s = timeEntry(STRING[15](id(INTEGER i)), e) AND id(i) AND NOT daysBetweenDates(currentDate(), spent_on(i)) > daysImportTimeEntry() DO {
+        FOR TimeEntry s = timeEntry (STRING [15] (id (INTEGER i)), e) AND id (i) AND NOT daysBetweenDates (currentDate (), spent_on (i))> daysImportTimeEntry () DO {
         
-            hours(s) <- hours(i);
-            comments(s) <- comments(i);
-            date(s) <- spent_on(i);
-            activity(s) <- activity(activity_name(i));
-            project(s) <- project(STRING[15](project_id(i)), e);
-            employee(s) <- GROUP MAX Employee p IF login(p) == trim(login(i));
-            issue(s) <- issue(STRING[15](issue_id(i)), e);
+            hours (s) <- hours (i);
+            comments (s) <- comments (i);
+            date (s) <- spent_on (i);
+            activity (s) <- activity (activity_name (i));
+            project (s) <- project (STRING [15] (project_id (i)), e);
+            employee (s) <- GROUP MAX Employee p IF login (p) == trim (login (i));
+            issue (s) <- issue (STRING [15] (issue_id (i)), e);
         }
         
-        FOR external(TimeEntry s) == e AND NOT daysBetweenDates(currentDate(), date(s)) > daysImportTimeEntry() AND 
-            NOT [GROUP SUM 1 IF imported(INTEGER i) AND NOT daysBetweenDates(currentDate(), spent_on(i)) > daysImportTimeEntry() BY STRING[15](id(i))](id(s)) DO {
+        FOR external (TimeEntry s) == e AND NOT daysBetweenDates (currentDate (), date (s))> daysImportTimeEntry () AND
+            NOT [GROUP SUM 1 IF imported (INTEGER i) AND NOT daysBetweenDates (currentDate (), spent_on (i))> daysImportTimeEntry () BY STRING [15] (id (i))] (id (s)) DO {
             DELETE s;
         }
         
-        message() <- '';
-        count() <- 0;
+        message () <- '';
+        count () <- 0;
         
-        FOR imported(INTEGER i) AND NOT [GROUP MAX Employee p BY login(p)](trim(login(i))) AND NOT daysBetweenDates(currentDate(), spent_on(i)) > daysImportTimeEntry() DO {
-            count() <- count() + 1;
-            message() <- CONCAT ' ', message() + '\r\nстрока:', (i + 1), 'login:', trim(login(i));
+        FOR imported (INTEGER i) AND NOT [GROUP MAX Employee p BY login (p)] (trim (login (i))) AND NOT daysBetweenDates (currentDate (), spent_on (i))> daysImportTimeEntry () DO {
+            count () <- count () + 1;
+            message () <- CONCAT '', message () + '\ r \ nstring:', (i + 1), 'login:', trim (login (i));
         }
         
-        IF count() > 0 THEN {
-            MESSAGE CONCAT ' ', 'Импортированные отметки времени без сотрудника:', count(), message();
+        IF count ()> 0 THEN {
+            MESSAGE CONCAT '', 'Imported timestamps without employee:', count (), message ();
         }
         
         APPLY;
     }
 }
 
-importActivity 'Импорт деятельностей' (External e) {
+importActivity 'Importing Activities' (External e) {
     NEWSESSION {
-        LOCAL name = STRING[100](INTEGER);
+        LOCAL name = STRING [100] (INTEGER);
             
         LOCAL file = FILE ();
-        EXTERNAL SQL path(e) EXEC 'SELECT name FROM enumerations activities WHERE type = \'TimeEntryActivity\'' TO file;
+        EXTERNAL SQL path (e) EXEC 'SELECT name FROM enumerations activities WHERE type = \' TimeEntryActivity \ '' TO file;
         
-        IMPORT TABLE FROM file() TO name;
+        IMPORT TABLE FROM file () TO name;
         
-        FOR [GROUP MIN INTEGER i BY name(i)](STRING[100] name) AND name != '' AND NOT activity(name) DO NEW s = Activity {
-            name(s) <- name;
+        FOR [GROUP MIN INTEGER i BY name (i)] (STRING [100] name) AND name! = '' AND NOT activity (name) DO NEW s = Activity {
+            name (s) <- name;
         }
         APPLY;
     }
 }
 
-disableEditing (TimeEntry t) += TRUE IF external(t);
+disableEditing (TimeEntry t) + = TRUE IF external (t);
