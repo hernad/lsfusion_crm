@@ -4,108 +4,108 @@ REQUIRE LegalEntity, Currency, Finance, AccountLedger;
 
 NAMESPACE Payment;
 
-CLASS Payment 'Платёж' : AccountLedger;
+CLASS Payment 'Payment': AccountLedger;
 TABLE payment (Payment);
 
-id 'Код' = DATA STRING[15] (Payment) INDEXED CHARWIDTH 5 IN id;
+id 'Code' = DATA STRING [15] (Payment) INDEXED CHARWIDTH 5 IN id;
 payment (id) = GROUP AGGR Payment c BY id (c);
 
-legalEntity 'Организация' = DATA LegalEntity(Payment) NONULL;
-idLegalEntity 'Код организации' (Payment p) = id(legalEntity(p));
-nameLegalEntity 'Организация' (Payment p) = name(legalEntity(p)) IN id;
-customer (Payment p) = customer(legalEntity(p)) MATERIALIZED INDEXED;
-nameCustomer 'Клиент' (Payment p) = name(customer(p));
+legalEntity 'Organization' = DATA LegalEntity (Payment) NONULL;
+idLegalEntity 'Organization code' (Payment p) = id (legalEntity (p));
+nameLegalEntity 'Organization' (Payment p) = name (legalEntity (p)) IN id;
+customer (Payment p) = customer (legalEntity (p)) MATERIALIZED INDEXED;
+nameCustomer 'Customer' (Payment p) = name (customer (p));
 
-company = DATA LegalEntity(Payment);
-idCompany 'Код компании' (Payment p) = id(company(p));
-nameCompany 'Компания' (Payment p) = name(company(p)) IN id;
+company = DATA LegalEntity (Payment);
+idCompany 'Company code' (Payment p) = id (company (p));
+nameCompany 'Company' (Payment p) = name (company (p)) IN id;
 
-CONSTRAINT company(Payment p) AND NOT isCompany(company(p)) CHECKED BY company[Payment] MESSAGE 'Компания платежа не является компанией';
+CONSTRAINT company (Payment p) AND NOT isCompany (company (p)) CHECKED BY company [Payment] MESSAGE 'The payment company is not a company';
 
-number 'Номер документа оплаты' = DATA STRING[15](Payment) IN id;
-date 'Дата' = DATA DATE (Payment) IN id;
-year 'Год' (Payment p) = extractYear(date(p));
-monthNumber 'Номер месяца' (Payment p) = extractMonthNumber(date(p));
-sum 'Сумма' = DATA NUMERIC[16,5](Payment);
-note 'Примечание' = DATA ISTRING[100](Payment);
+number 'Payment document number' = DATA STRING [15] (Payment) IN id;
+date 'Date' = DATA DATE (Payment) IN id;
+year 'Year' (Payment p) = extractYear (date (p));
+monthNumber 'Month number' (Payment p) = extractMonthNumber (date (p));
+sum 'Amount' = DATA NUMERIC [16,5] (Payment);
+note 'Note' = DATA ISTRING [100] (Payment);
 
-CLASS PaymentType 'Вид платежа';
+CLASS PaymentType 'Type of payment';
 TABLE paymentType (PaymentType);
 
-name 'Наименование' = DATA ISTRING[100] (PaymentType) CHARWIDTH 8;
+name 'Name' = DATA ISTRING [100] (PaymentType) CHARWIDTH 8;
 
-FORM paymentType 'Вид платежа'
+FORM paymentType 'Type of payment'
     OBJECTS o = PaymentType PANEL
-    PROPERTIES(o) name
+    PROPERTIES (o) name
     
     EDIT PaymentType OBJECT o
 ;
 
-FORM paymentTypes 'Виды платежа'
+FORM paymentTypes 'Types of payment'
     OBJECTS o = PaymentType
-    PROPERTIES(o) READONLY name
-    PROPERTIES(o) NEWSESSION NEW, EDIT, DELETE
+    PROPERTIES (o) READONLY name
+    PROPERTIES (o) NEWSESSION NEW, EDIT, DELETE
     
     LIST PaymentType OBJECT o
 ;
 
-type = DATA PaymentType(Payment);
-nameType 'Вид платежа' (Payment e) = name(type(e));
+type = DATA PaymentType (Payment);
+nameType 'Type of payment' (Payment e) = name (type (e));
 
-currency = DATA Currency(Payment);
-nameCurrency 'Валюта платежа' (Payment p) = name(currency(p));
-shortNameCurrency 'Валюта (сокр.)' (Payment p) = shortName(currency(p));
-sidCurrency 'Валюта (сокр.)' (Payment p) = sid(currency(p));
+currency = DATA Currency (Payment);
+nameCurrency 'Payment currency' (Payment p) = name (currency (p));
+shortNameCurrency 'Currency (abbreviated)' (Payment p) = shortName (currency (p));
+sidCurrency 'Currency (abbreviated)' (Payment p) = sid (currency (p));
 
-sumCurrency 'Сумма в валюте' (Payment p) = round2(sum(p) * OVERRIDE rateOn(defaultTypeExchange(), currency(p), date(p)), 1) MATERIALIZED;
+sumCurrency 'Amount in currency' (Payment p) = round2 (sum (p) * OVERRIDE rateOn (defaultTypeExchange (), currency (p), date (p)), 1) MATERIALIZED;
 
-sumPayment 'Сумма платежей' (Customer c) = GROUP SUM sum(Payment p) BY customer(p) MATERIALIZED;
+sumPayment 'Amount of payments' (Customer c) = GROUP SUM sum (Payment p) BY customer (p) MATERIALIZED;
 
-account = DATA Account(Payment);
-numberAccount 'Р/с' (Payment p) = number(account(p)) CHARWIDTH 10;
+account = DATA Account (Payment);
+numberAccount 'Р / с' (Payment p) = number (account (p)) CHARWIDTH 10;
 
-accountFrom = DATA Account(Payment);
-numberAccountFrom 'Р/с с' (Payment p) = number(accountFrom(p)) CHARWIDTH 10;
+accountFrom = DATA Account (Payment);
+numberAccountFrom 'Р / с с' (Payment p) = number (accountFrom (p)) CHARWIDTH 10;
 
-WHEN LOCAL CHANGED (company(Payment p)) AND NOT CHANGED (account(p)) DO {
-    account(p) <- account(company(p));
+WHEN LOCAL CHANGED (company (Payment p)) AND NOT CHANGED (account (p)) DO {
+    account (p) <- account (company (p));
 }
 
-CONSTRAINT account(Payment p) AND NOT company(p) == legalEntity(account(p)) CHECKED BY account[Payment] MESSAGE 'Счёт платежа не соответствует компании';
-CONSTRAINT accountFrom(Payment p) AND NOT company(p) == legalEntity(accountFrom(p)) CHECKED BY accountFrom[Payment] MESSAGE 'Счёт с платежа не соответствует компании';
+CONSTRAINT account (Payment p) AND NOT company (p) == legalEntity (account (p)) CHECKED BY account [Payment] MESSAGE 'The payment account does not match the company';
+CONSTRAINT accountFrom (Payment p) AND NOT company (p) == legalEntity (accountFrom (p)) CHECKED BY accountFrom [Payment] MESSAGE 'The account from the payment does not match the company';
 
-CLASS PaymentAccountLedger : AccountLedger;
-paymentAccountLedger = AGGR PaymentAccountLedger WHERE accountFrom(Payment payment);
+CLASS PaymentAccountLedger: AccountLedger;
+paymentAccountLedger = AGGR PaymentAccountLedger WHERE accountFrom (Payment payment);
 
-date(PaymentAccountLedger a) += date(payment(a)); 
-sum(PaymentAccountLedger a) += -sum(payment(a)); 
-note(PaymentAccountLedger a) += note(payment(a)); 
-account(PaymentAccountLedger a) += accountFrom(payment(a)); 
+date (PaymentAccountLedger a) + = date (payment (a));
+sum (PaymentAccountLedger a) + = -sum (payment (a));
+note (PaymentAccountLedger a) + = note (payment (a));
+account (PaymentAccountLedger a) + = accountFrom (payment (a));
 
-date(Payment p) += date(p);
-sum(Payment p) += sum(p);
-note(Payment p) += note(p);
-account(Payment p) += account(p);
+date (Payment p) + = date (p);
+sum (Payment p) + = sum (p);
+note (Payment p) + = note (p);
+account (Payment p) + = account (p);
 
-FORM dialogInputSum 'Сумма нового платежа'
-    OBJECTS n = NUMERIC[16,5] PANEL
-    PROPERTIES sum 'Сумма' = VALUE (n)
+FORM dialogInputSum 'New payment amount'
+    OBJECTS n = NUMERIC [16.5] PANEL
+    PROPERTIES sum 'Sum' = VALUE (n)
 ;
 DESIGN dialogInputSum {
-    size = (300,70);
+    size = (300.70);
     BOX (n) {
         fill = 1;
-        caption = 'Сумма';
-        MOVE PROPERTY (sum) { 
+        caption = 'Amount';
+        MOVE PROPERTY (sum) {
             fill = 1;
-            caption = ''; 
+            caption = '';
         }
     }
 }
 
-FORM payment 'Платёж'
+FORM payment 'Payment'
     OBJECTS o = Payment PANEL
-    PROPERTIES(o) id, nameLegalEntity, nameCompany, number, date, nameType, sum, shortNameCurrency, sumCurrency, note, numberAccount, numberAccountFrom
+    PROPERTIES (o) id, nameLegalEntity, nameCompany, number, date, nameType, sum, shortNameCurrency, sumCurrency, note, numberAccount, numberAccountFrom
         
     EDIT Payment OBJECT o
 ;
@@ -114,53 +114,53 @@ DESIGN payment {
     OBJECTS {
         NEW main FIRST {
             type = CONTAINERH;
-            caption = 'Основные параметры';
-            MOVE PROPERTY (id(o));
-            MOVE PROPERTY (date(o));
-            MOVE PROPERTY (number(o));
-            MOVE PROPERTY (nameType(o));
+            caption = 'Main parameters';
+            MOVE PROPERTY (id (o));
+            MOVE PROPERTY (date (o));
+            MOVE PROPERTY (number (o));
+            MOVE PROPERTY (nameType (o));
         }
         NEW contacts AFTER main {
             type = CONTAINERH;
-            caption = 'Контакты';
-            MOVE PROPERTY (nameLegalEntity(o));
-            MOVE PROPERTY (nameCompany(o));
+            caption = 'Contacts';
+            MOVE PROPERTY (nameLegalEntity (o));
+            MOVE PROPERTY (nameCompany (o));
         }
         NEW docs AFTER contacts {
             type = CONTAINERH;
-            caption = 'Документы';
+            caption = 'Documents';
         }
         NEW sum AFTER docs {
             type = CONTAINERH;
-            caption = 'Сумма';
-            MOVE PROPERTY (sum(o));
-            MOVE PROPERTY (shortNameCurrency(o));
-            MOVE PROPERTY (sumCurrency(o));
-            MOVE PROPERTY (numberAccount(o));
-            MOVE PROPERTY (numberAccountFrom(o));
+            caption = 'Amount';
+            MOVE PROPERTY (sum (o));
+            MOVE PROPERTY (shortNameCurrency (o));
+            MOVE PROPERTY (sumCurrency (o));
+            MOVE PROPERTY (numberAccount (o));
+            MOVE PROPERTY (numberAccountFrom (o));
         }
         NEW note AFTER sum {
-            caption = 'Дополнительные параметры';
+            caption = 'Additional options';
             alignment = STRETCH;
-            MOVE PROPERTY (note(o));
+            MOVE PROPERTY (note (o));
         }
     }
 }
 
-FORM payments 'Платежи'
-    OBJECTS o = Payment LAST 
-    PROPERTIES(o) READONLY id, nameLegalEntity,nameCustomer, nameCompany, number, date, 
+FORM payments 'Payments'
+    OBJECTS o = Payment LAST
+    PROPERTIES (o) READONLY id, nameLegalEntity, nameCustomer, nameCompany, number, date,
                            year, monthNumber, nameType, sum, shortNameCurrency, sumCurrency, note, numberAccount, numberAccountFrom
-    ORDERS date(o), nameLegalEntity(o), nameCompany(o)
-    PROPERTIES(o) NEWSESSION NEW, EDIT, DELETE
-    ORDERS date(o)
+    ORDERS date (o), nameLegalEntity (o), nameCompany (o)
+    PROPERTIES (o) NEWSESSION NEW, EDIT, DELETE
+    ORDERS date (o)
 ;
 
-FORM dialogPayments 'Платежи'
-    OBJECTS o = Payment LAST 
-    PROPERTIES(o) READONLY id, nameLegalEntity, nameCustomer, nameCompany, number, date, 
+FORM dialogPayments 'Payments'
+    OBJECTS o = Payment LAST
+    PROPERTIES (o) READONLY id, nameLegalEntity, nameCustomer, nameCompany, number, date,
                            year, monthNumber, nameType, sum, shortNameCurrency, sumCurrency, note, numberAccount, numberAccountFrom
-    ORDERS date(o), nameLegalEntity(o), nameCompany(o)
+    ORDERS date (o), nameLegalEntity (o), nameCompany (o)
     
     LIST Payment OBJECT o
 ;
