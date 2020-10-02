@@ -4,97 +4,97 @@ REQUIRE Employee, System, Finance;
 
 NAMESPACE Employee;
 
-CLASS Expense 'Расход по сотруднику';
+CLASS Expense 'Expense by employee';
 TABLE expense (Expense);
 
-employee = DATA Employee(Expense) NONULL DELETE;
-nameEmployee 'Сотрудник' (Expense e) = name(employee(e));
+employee = DATA Employee (Expense) NONULL DELETE;
+nameEmployee 'Employee' (Expense e) = name (employee (e));
 
-year 'Год' = DATA INTEGER (Expense);
-month = DATA Month(Expense);
-nameMonth 'Месяц' (Expense e) = staticCaption(month(e));
-numberMonth 'Номер месяца' (Expense e) = number(month(e));
-sum 'Сумма' = DATA NUMERIC[18,4](Expense);
+year 'Year' = DATA INTEGER (Expense);
+month = DATA Month (Expense);
+nameMonth 'Month' (Expense e) = staticCaption (month (e));
+numberMonth 'Month number' (Expense e) = number (month (e));
+sum 'Amount' = DATA NUMERIC [18,4] (Expense);
 
-CLASS ExpenseType 'Тип расхода';
+CLASS ExpenseType 'Expense type';
 TABLE expenseType (ExpenseType);
 
-name 'Наименование' = DATA ISTRING[100] (ExpenseType) CHARWIDTH 15;
-percent 'Процент потерь, %' = DATA NUMERIC[5,2](ExpenseType);
+name 'Name' = DATA ISTRING [100] (ExpenseType) CHARWIDTH 15;
+percent 'Loss percentage,%' = DATA NUMERIC [5,2] (ExpenseType);
 
-FORM expenseType 'Тип расхода'
+FORM expenseType 'expense type'
     OBJECTS o = ExpenseType PANEL
-    PROPERTIES(o) name, percent
+    PROPERTIES (o) name, percent
     
     EDIT ExpenseType OBJECT o
 ;
 
-FORM expenseTypes 'Типы расхода'
-    OBJECTS o = ExpenseType 
-    PROPERTIES(o) READONLY name, percent
+FORM expenseTypes 'expense types'
+    OBJECTS o = ExpenseType
+    PROPERTIES (o) READONLY name, percent
     PROPERTIES (o) NEWSESSION NEW, EDIT, DELETE
     
     LIST ExpenseType OBJECT o
 ;
 
-type = DATA ExpenseType(Expense);
-nameType 'Тип расхода' (Expense e) = name(type(e));
+type = DATA ExpenseType (Expense);
+nameType 'Expense type' (Expense e) = name (type (e));
 
-expense = GROUP AGGR Expense e BY employee(e), type(e), year(e), month(e);
+expense = GROUP AGGR Expense e BY employee (e), type (e), year (e), month (e);
 
-FORM expense 'Расход по сотруднику'
+FORM expense 'Expense by employee'
     OBJECTS o = Expense PANEL
-    PROPERTIES(o) nameEmployee, year, nameMonth, numberMonth, nameType, sum
+    PROPERTIES (o) nameEmployee, year, nameMonth, numberMonth, nameType, sum
     
     EDIT Expense OBJECT o
 ;
 
-sum 'Расход' (Employee e, INTEGER y, Month m, ExpenseType t) = GROUP SUM sum(Expense x) BY employee(x), year(x), month(x), type(x);
-lastExpense = GROUP LAST Expense e ORDER e BY employee(e), year(e), month(e), type(e);
+sum 'Expense' (Employee e, INTEGER y, Month m, ExpenseType t) = GROUP SUM sum (Expense x) BY employee (x), year (x), month (x), type (x);
+lastExpense = GROUP LAST Expense e ORDER e BY employee (e), year (e), month (e), type (e);
 
 changeSumExpense (Employee e, INTEGER y, Month m, ExpenseType t) {
     INPUT s = INTEGER DO {
         
-        IF lastExpense(e, y, m, t) THEN {
+        IF lastExpense (e, y, m, t) THEN {
             
             IF s THEN {
-                sum(Expense x) <- s IF x == lastExpense(e, y, m, t) WHERE employee(x) == e AND year(x) == y AND month(x) == m AND type(x) = t;
+                sum (Expense x) <- s IF x == lastExpense (e, y, m, t) WHERE employee (x) == e AND year (x) == y AND month (x) == m AND type (x ) = t;
             }
-            ELSE DELETE Expense x WHERE employee(x) == e AND year(x) == y AND month(x) == m AND type(x) = t;
+            ELSE DELETE Expense x WHERE employee (x) == e AND year (x) == y AND month (x) == m AND type (x) = t;
         }
         ELSE IF s THEN NEW x = Expense {
             
-            employee(x) <- e;
-            year(x) <- y;
-            month(x) <- m;
-            type(x) <- t;
-            sum(x) <- s;
+            employee (x) <- e;
+            year (x) <- y;
+            month (x) <- m;
+            type (x) <- t;
+            sum (x) <- s;
         }
     }
 }
 
-FORM expenses 'Расходы по сотруднику'
-    OBJECTS o = Expense LAST 
-    PROPERTIES(o) READONLY nameEmployee, year, nameMonth, numberMonth, nameType, sum
-    PROPERTIES(o) NEWSESSION NEW, EDIT, DELETE
-    ORDERS year(o), numberMonth(o), nameEmployee(o), nameType(o), sum(o)
+FORM expenses 'Expenses per employee'
+    OBJECTS o = Expense LAST
+    PROPERTIES (o) READONLY nameEmployee, year, nameMonth, numberMonth, nameType, sum
+    PROPERTIES (o) NEWSESSION NEW, EDIT, DELETE
+    ORDERS year (o), numberMonth (o), nameEmployee (o), nameType (o), sum (o)
     
     OBJECTS t = ExpenseType PANEL
-    PROPERTIES name(t) SELECTOR
+    PROPERTIES name (t) SELECTOR
     
     OBJECTS y = INTEGER PANEL
-    PROPERTIES year 'Год' = VALUE (y)
+    PROPERTIES year 'Year' = VALUE (y)
         
     OBJECTS m = Month
     OBJECTS e = Employee
-    PROPERTIES name(e) READONLY, sum(e, y, m, t) COLUMNS (m) HEADER (staticCaption(m)) ON CHANGE changeSumExpense(e, y, m, t)
-    PROPERTIES number(m) SHOWIF NULL 
-    ORDERS name(e), number(m)
+    PROPERTIES name (e) READONLY, sum (e, y, m, t) COLUMNS (m) HEADER (staticCaption (m)) ON CHANGE changeSumExpense (e, y, m, t)
+    PROPERTIES number (m) SHOWIF NULL
+    ORDERS name (e), number (m)
     
-    FILTERGROUP active FILTER 'Активные' NOT inactive(e) DEFAULT
+    FILTERGROUP active FILTER 'Active' NOT inactive (e) DEFAULT
     
     EVENTS ON INIT {
-        SEEK expenses.y = extractYear(currentDate());
+        SEEK expenses.y = extractYear (currentDate ());
     }
 ;
 
@@ -105,17 +105,17 @@ DESIGN expenses {
             type = TABBED;
             fill = 1;
             NEW expenses {
-                caption = 'Расходы';
+                caption = 'Expenses';
                 MOVE BOX (o);
             }
             NEW sumBox {
-                caption = 'Подбор';
+                caption = 'Caption';
                 type = CONTAINERV;
                 NEW head {
                     type = CONTAINERH;
-                    caption = 'Фильтры';
-                    MOVE PROPERTY (name(t)) { caption = 'Тип расхода'; }
-                    MOVE PROPERTY (year) { charWidth = 10; }
+                    caption = 'Filters';
+                    MOVE PROPERTY (name (t)) {caption = 'Type of flow'; }
+                    MOVE PROPERTY (year) {charWidth = 10; }
                 }
                 MOVE BOX (e);
             }
@@ -123,10 +123,10 @@ DESIGN expenses {
     }
 }
 
-FORM dialogExpenses 'Расходы по сотруднику'
-    OBJECTS o = Expense LAST 
-    PROPERTIES(o) READONLY nameEmployee, year, nameMonth, numberMonth, nameType, sum
-    ORDERS year(o), numberMonth(o), nameEmployee(o), nameType(o), sum(o)
+FORM dialogExpenses 'Expenses by employee'
+    OBJECTS o = Expense LAST
+    PROPERTIES (o) READONLY nameEmployee, year, nameMonth, numberMonth, nameType, sum
+    ORDERS year (o), numberMonth (o), nameEmployee (o), nameType (o), sum (o)
     
     LIST Expense OBJECT o
 ;
