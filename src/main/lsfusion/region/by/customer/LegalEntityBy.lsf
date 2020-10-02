@@ -4,16 +4,16 @@ REQUIRE LegalEntity;
 
 NAMESPACE LegalEntity;
 
-UNP 'УНП' = DATA STRING[9] (LegalEntity) CHARWIDTH 9 NOFLEX;
-OKPO 'ОКПО' = DATA STRING[20] (LegalEntity) CHARWIDTH 15;
+UNP 'UNP' = DATA STRING [9] (LegalEntity) CHARWIDTH 9 NOFLEX;
+OKPO 'OKPO' = DATA STRING [20] (LegalEntity) CHARWIDTH 15;
 
-EXTEND FORM legalEntity PROPERTIES(o) UNP, OKPO;
-EXTEND FORM legalEntities PROPERTIES(o) READONLY UNP, OKPO;
-EXTEND FORM dialogLegalEntities PROPERTIES(o) READONLY UNP, OKPO;
+EXTEND FORM legalEntity PROPERTIES (o) UNP, OKPO;
+EXTEND FORM legalEntities PROPERTIES (o) READONLY UNP, OKPO;
+EXTEND FORM dialogLegalEntities PROPERTIES (o) READONLY UNP, OKPO;
 
 DESIGN legalEntity {
-    bank{
-        MOVE PROPERTY (UNP(o));
-        MOVE PROPERTY (OKPO(o));
-    }
+     bank {
+         MOVE PROPERTY (UNP (o));
+         MOVE PROPERTY (OKPO (o));
+     }
 }
