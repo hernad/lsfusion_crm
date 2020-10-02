@@ -4,41 +4,41 @@ REQUIRE PaymentContract, Agreement;
 
 NAMESPACE Payment;
 
-agreement = DATA Agreement(Payment);
-idAgreement 'Код соглашения' (Payment p) = id(agreement(p));
-numberAgreement 'Номер соглашения' (Payment p) = number(agreement(p));
-nameAgreement 'Наименование соглашения' (Payment p) = name(agreement(p));
+agreement = DATA Agreement (Payment);
+idAgreement 'Agreement code' (Payment p) = id (agreement (p));
+numberAgreement 'Agreement number' (Payment p) = number (agreement (p));
+nameAgreement 'Name of the agreement' (Payment p) = name (agreement (p));
 
-paidPayment 'Оплачено' (Agreement a) = GROUP SUM sum(Payment p) BY agreement(p) MATERIALIZED;
-paidPayment 'Оплачено' (Agreement a, DATE d) = GROUP SUM sum(Payment p) IF date(p) <= d BY agreement(p);
+paidPayment 'Paid' (Agreement a) = GROUP SUM sum (Payment p) BY agreement (p) MATERIALIZED;
+paidPayment 'Paid' (Agreement a, DATE d) = GROUP SUM sum (Payment p) IF date (p) <= d BY agreement (p);
 
-paidNotPaymentAgreement (Contract c) = paid(c) (-) [GROUP SUM paidPayment(Agreement a) BY contract(a)](c);
+paidNotPaymentAgreement (Contract c) = paid (c) (-) [GROUP SUM paidPayment (Agreement a) BY contract (a)] (c);
 
-paidContract 'Оплачено' (Agreement a) = PARTITION UNGROUP paidNotPaymentAgreement
-                                                      LIMIT STRICT sum(a) (-) paidPayment(a)
-                                                      ORDER date(a),a 
-                                                      BY contract(a) MATERIALIZED; 
+paidContract 'Paid' (Agreement a) = PARTITION UNGROUP paidNotPaymentAgreement
+                                                      LIMIT STRICT sum (a) (-) paidPayment (a)
+                                                      ORDER date (a), a
+                                                      BY contract (a) MATERIALIZED;
                                                       
-paid 'Оплачено' (Agreement a) = paidContract(a) (+) paidPayment(a);
+paid 'Paid' (Agreement a) = paidContract (a) (+) paidPayment (a);
 
-paid(Agreement c) += paid(c);             
+paid (Agreement c) + = paid (c);
 
-CONSTRAINT contract(agreement(Payment p)) != contract(p) CHECKED BY agreement[Payment] MESSAGE 'Договор соглашения должен совпадать с договором платежа';
+CONSTRAINT contract (agreement (Payment p))! = Contract (p) CHECKED BY agreement [Payment] MESSAGE 'The agreement agreement must match the payment agreement';
 
-EXTEND FORM dialogAgreements PROPERTIES paid(o) AFTER sum(o);
+EXTEND FORM dialogAgreements PROPERTIES paid (o) AFTER sum (o);
 EXTEND FORM payment PROPERTIES (o) numberAgreement;
 
 DESIGN payment {
     docs {
-        MOVE PROPERTY (numberAgreement(o));
+        MOVE PROPERTY (numberAgreement (o));
     }
 }
 
-EXTEND FORM payments 
+EXTEND FORM payments
     PROPERTIES (o) READONLY numberAgreement
 ;
-EXTEND FORM dialogPayments 
+EXTEND FORM dialogPayments
     PROPERTIES (o) READONLY numberAgreement
 ;
 
-EXTEND FORM contract PROPERTIES READONLY paid(ag), numberAgreement(p);
+EXTEND FORM contract PROPERTIES READONLY paid (ag), numberAgreement (p);
