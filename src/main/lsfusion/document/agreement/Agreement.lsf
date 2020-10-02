@@ -4,136 +4,136 @@ REQUIRE Contract, Doc;
 
 NAMESPACE Agreement;
 
-CLASS Agreement 'Соглашение' : Document;
+CLASS Agreement 'Agreement': Document;
 TABLE agreement (Agreement);
 
-id 'Код' = DATA STRING[15] (Agreement) INDEXED CHARWIDTH 5 IN id;
+id 'Code' = DATA STRING [15] (Agreement) INDEXED CHARWIDTH 5 IN id;
 agreement (id) = GROUP AGGR Agreement c BY id (c);
 
-name 'Наименование' = DATA ISTRING[150](Agreement) CHARWIDTH 20;
-series 'Серия' = DATA STRING[15](Agreement) IN id;
-number 'Номер' = DATA STRING[15](Agreement) IN id;
+name 'Name' = DATA ISTRING [150] (Agreement) CHARWIDTH 20;
+series 'Series' = DATA STRING [15] (Agreement) IN id;
+number 'Number' = DATA STRING [15] (Agreement) IN id;
 
-@defineNumeratedDefault(Agreement, 'Соглашения', 'СГ');
+@defineNumeratedDefault (Agreement, 'Agreements', 'SG');
 
-contract = DATA Contract(Agreement);
-idContract 'Код договора' (Agreement a) = id(contract(a));
-numberContract 'Номер договора' (Agreement a) = number(contract(a)) IN id;
-customer (Agreement a) = customer(contract(a));
-nameCustomer 'Клиент' (Agreement a) = nameCustomer(contract(a));
-legalEntity (Agreement a) = legalEntity(contract(a));
-nameLegalEntity 'Организация' (Agreement a) = nameLegalEntity(contract(a));
-company (Agreement a) = company(contract(a));
-nameCompany 'Компания' (Agreement a) = name(company(a));
+contract = DATA Contract (Agreement);
+idContract 'Agreement code' (Agreement a) = id (contract (a));
+numberContract 'Agreement number' (Agreement a) = number (contract (a)) IN id;
+customer (Agreement a) = customer (contract (a));
+nameCustomer 'Customer' (Agreement a) = nameCustomer (contract (a));
+legalEntity (Agreement a) = legalEntity (contract (a));
+nameLegalEntity 'Organization' (Agreement a) = nameLegalEntity (contract (a));
+company (Agreement a) = company (contract (a));
+nameCompany 'Company' (Agreement a) = name (company (a));
 
-authorisedPersonLegalEntity = DATA Contact.Contact(Agreement);
-idAuthorisedPersonLegalEntity 'Код уп. лица организации' (Agreement c) = id(authorisedPersonLegalEntity(c));
-nameAuthorisedPersonLegalEntity 'Уп. лицо организации' (Agreement c) = name(authorisedPersonLegalEntity(c));
-authorisedDocumentLegalEntity 'На основании' = DATA ISTRING[1000](Agreement) CHARWIDTH 20;
+authorizedPersonLegalEntity = DATA Contact.Contact (Agreement);
+idAuthorisedPersonLegalEntity 'Unit code organization persons' (Agreement c) = id (authorizedPersonLegalEntity (c));
+nameAuthorisedPersonLegalEntity 'Up. organization person '(Agreement c) = name (authorizedPersonLegalEntity (c));
+authorizedDocumentLegalEntity 'Based on' = DATA ISTRING [1000] (Agreement) CHARWIDTH 20;
 
-authorisedPersonCompany  (Agreement c) = DATA Contact.Contact(Agreement);
-idAuthorisedPersonCompany 'Код уп. лица компании' (Agreement c) = id(authorisedPersonCompany(c));
-nameAuthorisedPersonCompany 'Уп. лицо компании' (Agreement c) = name(authorisedPersonCompany(c));
-authorisedDocumentCompany 'На основании' = DATA ISTRING[1000](Agreement) CHARWIDTH 20;
+authorizedPersonCompany (Agreement c) = DATA Contact.Contact (Agreement);
+idAuthorisedPersonCompany 'Pt code company persons' (Agreement c) = id (authorizedPersonCompany (c));
+nameAuthorisedPersonCompany 'Up. company person '(Agreement c) = name (authorizedPersonCompany (c));
+authorizedDocumentCompany 'Based on' = DATA ISTRING [1000] (Agreement) CHARWIDTH 20;
 
-WHEN LOCAL (CHANGED (legalEntity(Agreement c)) OR CHANGED (contract(c))) AND NOT CHANGED (authorisedPersonLegalEntity(c)) DO {
-    authorisedPersonLegalEntity (c) <- OVERRIDE authorisedPersonLegalEntity(contract(c)), authorisedPerson(legalEntity(c));
-    authorisedDocumentLegalEntity (c) <- OVERRIDE authorisedDocumentLegalEntity(contract(c)), authorisedDocument(authorisedPersonLegalEntity(c)), authorisedDocument(legalEntity(c));
+WHEN LOCAL (CHANGED (legalEntity (Agreement c)) OR CHANGED (contract (c))) AND NOT CHANGED (authorizedPersonLegalEntity (c)) DO {
+    authorizedPersonLegalEntity (c) <- OVERRIDE authorizedPersonLegalEntity (contract (c)), authorizedPerson (legalEntity (c));
+    authorizedDocumentLegalEntity (c) <- OVERRIDE authorizedDocumentLegalEntity (contract (c)), authorizedDocument (authorizedPersonLegalEntity (c)), authorizedDocument (legalEntity (c));
 }
-WHEN LOCAL CHANGED (authorisedPersonLegalEntity(Agreement c)) AND NOT CHANGED (legalEntity(c)) DO {
-    authorisedDocumentLegalEntity (c) <- authorisedDocument(authorisedPersonLegalEntity(c));
+WHEN LOCAL CHANGED (authorizedPersonLegalEntity (Agreement c)) AND NOT CHANGED (legalEntity (c)) DO {
+    authorizedDocumentLegalEntity (c) <- authorizedDocument (authorizedPersonLegalEntity (c));
 }
-WHEN LOCAL (CHANGED (company(Agreement c)) OR CHANGED (contract(c))) AND NOT CHANGED (authorisedPersonCompany(c)) DO {
-    authorisedPersonCompany (c) <- OVERRIDE authorisedPersonCompany(contract(c)), authorisedPerson(company(c));
-    authorisedDocumentCompany (c) <- OVERRIDE authorisedDocumentCompany(contract(c)), authorisedDocument(authorisedPersonCompany(c)), authorisedDocument(company(c));
+WHEN LOCAL (CHANGED (company (Agreement c)) OR CHANGED (contract (c))) AND NOT CHANGED (authorizedPersonCompany (c)) DO {
+    authorizedPersonCompany (c) <- OVERRIDE authorizedPersonCompany (contract (c)), authorizedPerson (company (c));
+    authorizedDocumentCompany (c) <- OVERRIDE authorizedDocumentCompany (contract (c)), authorizedDocument (authorisedPersonCompany (c)), authorizedDocument (company (c));
 }
-WHEN LOCAL CHANGED (authorisedPersonCompany(Agreement c)) AND NOT CHANGED (company(c)) DO {
-    authorisedDocumentCompany (c) <- authorisedDocument(authorisedPersonCompany(c));
+WHEN LOCAL CHANGED (authorizedPersonCompany (Agreement c)) AND NOT CHANGED (company (c)) DO {
+    authorizedDocumentCompany (c) <- authorisedDocument (authorizedPersonCompany (c));
 }
 
-CONSTRAINT authorisedPersonLegalEntity(Agreement c) AND NOT legalEntity(authorisedPersonLegalEntity(c)) == legalEntity(c) 
-    CHECKED BY authorisedPersonLegalEntity[Agreement] MESSAGE 'Организация уполномоченного лица не совпадает с организацией договора';
-CONSTRAINT authorisedPersonCompany(Agreement c) AND NOT legalEntity(authorisedPersonCompany(c)) == company(c) 
-    CHECKED BY authorisedPersonCompany[Agreement] MESSAGE 'Организация уполномоченного лица не совпадает с компанией договора';
-CONSTRAINT Agreement a IS Agreement AND NOT contract(a) MESSAGE 'Для соглашения должен быть задан договор';
+CONSTRAINT authorizedPersonLegalEntity (Agreement c) AND NOT legalEntity (authorizedPersonLegalEntity (c)) == legalEntity (c)
+    CHECKED BY authorizedPersonLegalEntity [Agreement] MESSAGE 'The organization of the authorized person does not match the organization of the contract';
+CONSTRAINT authorizedPersonCompany (Agreement c) AND NOT legalEntity (authorizedPersonCompany (c)) == company (c)
+    CHECKED BY authorizedPersonCompany [Agreement] MESSAGE 'The organization of the authorized person is not the same as the company of the contract';
+CONSTRAINT Agreement a IS Agreement AND NOT contract (a) MESSAGE 'A contract must be specified for the agreement';
 
-date 'Дата' = DATA DATE (Agreement) IN id;
+date 'Date' = DATA DATE (Agreement) IN id;
 
-CLASS AgreementType 'Тип соглашения' : Type;
-TABLE agreementType(AgreementType);
+CLASS AgreementType 'Type of Agreement': Type;
+TABLE agreementType (AgreementType);
 
-name 'Наименование' = DATA ISTRING[50](AgreementType) CHARWIDTH 15;
+name 'Name' = DATA ISTRING [50] (AgreementType) CHARWIDTH 15;
 
-name(AgreementType c) += name(c);
+name (AgreementType c) + = name (c);
 
-FORM agreementType 'Тип соглашения'
+FORM agreementType 'Type of agreement'
     OBJECTS o = AgreementType PANEL
-    PROPERTIES(o) name
+    PROPERTIES (o) name
     
     EDIT AgreementType OBJECT o
 ;
 
-FORM agreementTypes 'Типы соглашения'
+FORM agreementTypes 'Types of agreement'
     OBJECTS o = AgreementType
-    PROPERTIES(o) READONLY name
+    PROPERTIES (o) READONLY name
     PROPERTIES (o) NEWSESSION NEW, EDIT, DELETE
     
     LIST AgreementType OBJECT o
 ;
 
-type = DATA AgreementType(Agreement);
-nameType 'Тип соглашения' (Agreement c) = name(type(c)) CHARWIDTH 15;
+type = DATA AgreementType (Agreement);
+nameType 'Type of Agreement' (Agreement c) = name (type (c)) CHARWIDTH 15;
 
-sum 'Стоимость' = DATA NUMERIC[16,5](Agreement);
+sum 'Cost' = DATA NUMERIC [16,5] (Agreement);
 
-dateSigningCompany 'Дата подписания компанией' = DATA DATE (Agreement);
-dateSending 'Дата отправки' = DATA DATE (Agreement);
-dateSigningCustomer 'Дата подписания клиентом' = DATA DATE (Agreement);
-dateReceiving 'Дата получения' = DATA DATE (Agreement);
-dateClosing 'Дата закрытия' = DATA DATE (Agreement);
+dateSigningCompany 'Date of signing by the company' = DATA DATE (Agreement);
+dateSending 'Date of sending' = DATA DATE (Agreement);
+dateSigningCustomer 'Date signed by customer' = DATA DATE (Agreement);
+dateReceiving 'Date of receipt' = DATA DATE (Agreement);
+dateClosing 'Closing Date' = DATA DATE (Agreement);
 
-active (Agreement c) = NOT dateClosing(c) <= currentDate();
+active (Agreement c) = NOT dateClosing (c) <= currentDate ();
 
-note 'Примечание' = DATA ISTRING[100](Agreement) CHARWIDTH 20;
-text 'Текст' = DATA TEXT (Agreement);
-textString 'Текст' (Agreement c) = ISTRING[500](text(c)) CHARWIDTH 20;
-terms 'Условия' = DATA TEXT (Agreement) CHARWIDTH 20;
+note 'Note' = DATA ISTRING [100] (Agreement) CHARWIDTH 20;
+text 'Text' = DATA TEXT (Agreement);
+textString 'Text' (Agreement c) = ISTRING [500] (text (c)) CHARWIDTH 20;
+terms 'Terms' = DATA TEXT (Agreement) CHARWIDTH 20;
 
-sendingWay = DATA SendingWay(Agreement);
-nameSendingWay 'Способ отправки документа' (Agreement c) = name(sendingWay(c));
+sendingWay = DATA SendingWay (Agreement);
+nameSendingWay 'Method of sending the document' (Agreement c) = name (sendingWay (c));
 
-id(Agreement c) += id(c);
-number(Agreement c) += number(c);
-date(Agreement c) += date(c);
-name(Agreement c) += name(c);
-type(Agreement c) += type(c);
-note(Agreement c) += note(c);
-text(Agreement c) += text(c);
-dateSigningCompany(Agreement c) += dateSigningCompany(c);
-dateSending(Agreement c) += dateSending(c);
-dateSigningCustomer(Agreement c) += dateSigningCustomer(c);
-dateReceiving(Agreement c) += dateReceiving(c);
-dateClosing(Agreement c) += dateClosing(c);
-customer(Agreement c) += customer(c);
-legalEntity(Agreement a) += legalEntity(a);
-company(Agreement a) += company(contract(a));
-contract(Agreement a) += contract(a);
-sum(Agreement c) += sum(c);
-description(Agreement c) += CONCAT ' ', 'Согл.', '№' + number(c), 'от ' + toDateDDMMYY(date(c)), 'по дог.', '№' + number(contract(c)), 'от ' + toDateDDMMYY(date(contract(c)));
-sendingWay(Agreement c) += sendingWay(c);
-fileName(Agreement c) += ISTRING[250] (CONCAT '_', nameLegalEntity(c), 'Соглашение', number(c), 'от_' + toDateDDMMYY(date(c)));
+id (Agreement c) + = id (c);
+number (Agreement c) + = number (c);
+date (Agreement c) + = date (c);
+name (Agreement c) + = name (c);
+type (Agreement c) + = type (c);
+note (Agreement c) + = note (c);
+text (Agreement c) + = text (c);
+dateSigningCompany (Agreement c) + = dateSigningCompany (c);
+dateSending (Agreement c) + = dateSending (c);
+dateSigningCustomer (Agreement c) + = dateSigningCustomer (c);
+dateReceiving (Agreement c) + = dateReceiving (c);
+dateClosing (Agreement c) + = dateClosing (c);
+customer (Agreement c) + = customer (c);
+legalEntity (Agreement a) + = legalEntity (a);
+company (Agreement a) + = company (contract (a));
+contract (Agreement a) + = contract (a);
+sum (Agreement c) + = sum (c);
+description (Agreement c) + = CONCAT '', 'Conform.', 'No.' + number (c), 'from' + toDateDDMMYY (date (c)), 'by dog.', 'No.' + number (contract (c)), 'from' + toDateDDMMYY (date (contract (c)));
+sendingWay (Agreement c) + = sendingWay (c);
+fileName (Agreement c) + = ISTRING [250] (CONCAT '_', nameLegalEntity (c), 'Agreement', number (c), 'from_' + toDateDDMMYY (date (c)));
 
 EXTEND CLASS DocType {
-    agreement 'Соглашение'
+    agreement 'Agreement'
 }
-docType(Agreement a) += DocType.agreement IF a IS Agreement;
-docType(AgreementType c) += DocType.agreement IF c IS AgreementType;
+docType (Agreement a) + = DocType.agreement IF a IS Agreement;
+docType (AgreementType c) + = DocType.agreement IF c IS AgreementType;
 
-FORM agreement 'Соглашение'
+FORM agreement 'Agreement'
     OBJECTS o = Agreement PANEL
-    PROPERTIES(o) id, nameNumerator, series, number, date, name, nameType, numberContract, nameCustomer READONLY, nameLegalEntity READONLY, sum,
-                  dateSending, dateReceiving, dateClosing, note, text, nameCompany READONLY, nameAuthorisedPersonLegalEntity, nameAuthorisedPersonCompany, 
-                  authorisedDocumentLegalEntity, authorisedDocumentCompany, nameSendingWay, terms
+    PROPERTIES (o) id, nameNumerator, series, number, date, name, nameType, numberContract, nameCustomer READONLY, nameLegalEntity READONLY, sum,
+                  dateSending, dateReceiving, dateClosing, note, text, nameCompany READONLY, nameAuthorisedPersonLegalEntity, nameAuthorisedPersonCompany,
+                  authorizedDocumentLegalEntity, authorizedDocumentCompany, nameSendingWay, terms
     
     EDIT Agreement OBJECT o
 ;
@@ -144,79 +144,79 @@ DESIGN agreement {
             type = CONTAINERH;
             alignment = STRETCH;
             NEW main {
-                caption = 'Основные параметры';
-                MOVE PROPERTY(id(o));
-                MOVE PROPERTY (name(o));
-                MOVE PROPERTY (nameNumerator(o));
+                caption = 'Main parameters';
+                MOVE PROPERTY (id (o));
+                MOVE PROPERTY (name (o));
+                MOVE PROPERTY (nameNumerator (o));
                 NEW number {
                     type = CONTAINERH;
-                    MOVE PROPERTY (series(o));
-                    MOVE PROPERTY (number(o));
+                    MOVE PROPERTY (series (o));
+                    MOVE PROPERTY (number (o));
                 }
-                MOVE PROPERTY(date(o));
-                MOVE PROPERTY(nameType(o));
+                MOVE PROPERTY (date (o));
+                MOVE PROPERTY (nameType (o));
             }
             NEW legalEntities {
-                caption = 'Контрагенты';
+                caption = 'Contractors';
                 flex = 1;
-                MOVE PROPERTY(numberContract(o));
-                MOVE PROPERTY(nameCompany(o));
+                MOVE PROPERTY (numberContract (o));
+                MOVE PROPERTY (nameCompany (o));
                 NEW autC {
                     type = CONTAINERH;
                     fill = 1;
-                    MOVE PROPERTY (nameAuthorisedPersonCompany(o));
-                    MOVE PROPERTY (authorisedDocumentCompany(o));
+                    MOVE PROPERTY (nameAuthorisedPersonCompany (o));
+                    MOVE PROPERTY (authorizedDocumentCompany (o));
                 }
-                MOVE PROPERTY(nameCustomer(o));
-                MOVE PROPERTY(nameLegalEntity(o));
+                MOVE PROPERTY (nameCustomer (o));
+                MOVE PROPERTY (nameLegalEntity (o));
                 NEW autL {
                     type = CONTAINERH;
                     fill = 1;
-                    MOVE PROPERTY (nameAuthorisedPersonLegalEntity(o));
-                    MOVE PROPERTY (authorisedDocumentLegalEntity(o));
+                    MOVE PROPERTY (nameAuthorisedPersonLegalEntity (o));
+                    MOVE PROPERTY (authorizedDocumentLegalEntity (o));
                 }
             }
         }
         NEW processing {
             type = CONTAINERH;
-            caption = 'Обработка';
-            MOVE PROPERTY(nameSendingWay(o));
-            MOVE PROPERTY(dateSending(o));
-            MOVE PROPERTY(dateReceiving(o));
-            MOVE PROPERTY(dateClosing(o));
+            caption = 'Processing';
+            MOVE PROPERTY (nameSendingWay (o));
+            MOVE PROPERTY (dateSending (o));
+            MOVE PROPERTY (dateReceiving (o));
+            MOVE PROPERTY (dateClosing (o));
         }
         NEW row3 {
             type = CONTAINERH;
             NEW payment {
-                caption = 'Задолженность';
+                caption = 'Debt';
                 type = CONTAINERH;
-                MOVE PROPERTY(sum(o));
+                MOVE PROPERTY (sum (o));
             }
             NEW add {
                 type = CONTAINERH;
-                caption = 'Дополнительная информация';
-                MOVE PROPERTY(note(o));
+                caption = 'Additional Information';
+                MOVE PROPERTY (note (o));
             }
         }
         NEW details {
             type = TABBED;
             fill = 1;
             NEW text {
-                caption = 'Содержание';
+                caption = 'Content';
                 fill = 1;
                 type = CONTAINERH;
                 NEW texts {
-                    caption = 'Текст';
+                    caption = 'Text';
                     fill = 1;
-                    MOVE PROPERTY (text(o)) { 
+                    MOVE PROPERTY (text (o)) {
                         caption = '';
                         fill = 1;
                     }
                 }
                 NEW terms {
-                    caption = 'Условия';
+                    caption = 'Conditions';
                     fill = 1;
-                    MOVE PROPERTY (terms(o)) { 
+                    MOVE PROPERTY (terms (o)) {
                         caption = '';
                         fill = 1;
                     }
@@ -226,20 +226,21 @@ DESIGN agreement {
     }
 }
 
-FORM agreements 'Соглашения'
-    OBJECTS o = Agreement LAST 
-    PROPERTIES(o) READONLY id, nameCompany, nameLegalEntity, numberContract, number, date, name, nameType, sum, nameSendingWay, dateSending, dateReceiving, dateClosing, note, textString
-    PROPERTIES(o) NEWSESSION NEW, EDIT, DELETE
-    ORDERS date(o)
+
+FORM agreements 'Agreements'
+    OBJECTS o = Agreement LAST
+    PROPERTIES (o) READONLY id, nameCompany, nameLegalEntity, numberContract, number, date, name, nameType, sum, nameSendingWay, dateSending, dateReceiving, dateClosing, note, textString
+    PROPERTIES (o) NEWSESSION NEW, EDIT, DELETE
+    ORDERS date (o)
 ;
 
-FORM dialogAgreements 'Соглашения'
-    OBJECTS o = Agreement LAST 
-    PROPERTIES(o) READONLY id, numberContract, number, date, name, nameType, sum, nameSendingWay, dateSending, dateReceiving, dateClosing, note, textString
-    ORDERS date(o)
+FORM dialogAgreements 'Agreements'
+    OBJECTS o = Agreement LAST
+    PROPERTIES (o) READONLY id, numberContract, number, date, name, nameType, sum, nameSendingWay, dateSending, dateReceiving, dateClosing, note, textString
+    ORDERS date (o)
 
     FILTERGROUP active
-        FILTER 'Активные' NOT dateClosing(o) <= currentDate() DEFAULT
+        FILTER 'Active' NOT dateClosing (o) <= currentDate () DEFAULT
     
     LIST Agreement OBJECT o
 ;
@@ -250,32 +251,33 @@ NAVIGATOR {
     }
 }
 
-addAgreement 'Добавить' (Contract c) {
+addAgreement 'Add' (Contract c) {
     NESTEDSESSION NEW a = Agreement {
-        contract(a) <- c;
-        date(a) <- currentDate();
+        contract (a) <- c;
+        date (a) <- currentDate ();
         SHOW agreement OBJECTS o = a DOCKED;
     }
-} IMAGE 'add.png'  CHANGEKEY 'INSERT' HIDE;
+} IMAGE 'add.png' CHANGEKEY 'INSERT' HIDE;
 
-EXTEND FORM contract 
-    OBJECTS ag = Agreement LAST 
+EXTEND FORM contract
+    OBJECTS ag = Agreement LAST
     PROPERTIES (ag) READONLY id, numberContract, number, date, name, nameType, sum, nameSendingWay, dateSending, dateReceiving, dateClosing, note, textString
-    PROPERTIES DRAW ag TOOLBAR addAgreement(o)
-    PROPERTIES(ag) NESTEDSESSION EDIT, DELETE
-    ORDERS date(ag)
-    FILTERS contract(ag) == o
-    FILTERGROUP activeAg FILTER 'Активные' active(ag) DEFAULT 
+    PROPERTIES DRAW ag TOOLBAR addAgreement (o)
+    PROPERTIES (ag) NESTEDSESSION EDIT, DELETE
+    ORDERS date (ag)
+    FILTERS contract (ag) == o
+    FILTERGROUP activeAg FILTER 'Active' active (ag) DEFAULT
 ;
 
 DESIGN contract {
     details {
         MOVE BOX (ag) {
-            caption = 'Соглашения';
+            caption = 'Agreements';
         }
     }
 }
 
-WHEN SET (Agreement a IS Agreement) AND NOT number(a) DO {  
-    number(a) <- ISTRING[15] (INTEGER ([GROUP MAX number(Agreement ag) BY contract(ag)](contract(a))) (+) 1); 
+WHEN SET (Agreement a IS Agreement) AND NOT number (a) DO {
+    number (a) <- ISTRING [15] (INTEGER ([GROUP MAX number (Agreement ag) BY contract (ag)] (contract (a))) (+) 1);
 }
+
