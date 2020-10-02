@@ -4,146 +4,146 @@ REQUIRE PaymentAct;
 
 NAMESPACE Payment;
 
-payment (STRING[15] idLegalEntity, DATE d, NUMERIC[16,5] sum) = GROUP MAX Payment p BY idLegalEntity(p), date(p), sum(p);
+payment (STRING [15] idLegalEntity, DATE d, NUMERIC [16,5] sum) = GROUP MAX Payment p BY idLegalEntity (p), date (p), sum (p);
 
 lines = DATA LOCAL BOOLEAN ();
 
-upperNameType (Contract c) = upper(nameType(c)) MATERIALIZED;
+upperNameType (Contract c) = upper (nameType (c)) MATERIALIZED;
 
-INDEX legalEntity(Contract c), upperNameType(c), date(c), c;
+INDEX legalEntity (Contract c), upperNameType (c), date (c), c;
 
-importPayments 'Импорт платежей' (FILE f) {
-    LOCAL idPayment = STRING[15](INTEGER);
-    LOCAL idCompany = STRING[15](INTEGER);
-    LOCAL idLegalEntity = STRING[15](INTEGER);
-    LOCAL idContract = STRING[15](INTEGER);
-    LOCAL type = STRING[50](INTEGER);
-    LOCAL idAgreement = STRING[15](INTEGER);
-    LOCAL idAct = STRING[15](INTEGER);
-    LOCAL number = STRING[15](INTEGER);
+importPayments 'Import payments' (FILE f) {
+    LOCAL idPayment = STRING [15] (INTEGER);
+    LOCAL idCompany = STRING [15] (INTEGER);
+    LOCAL idLegalEntity = STRING [15] (INTEGER);
+    LOCAL idContract = STRING [15] (INTEGER);
+    LOCAL type = STRING [50] (INTEGER);
+    LOCAL idAgreement = STRING [15] (INTEGER);
+    LOCAL idAct = STRING [15] (INTEGER);
+    LOCAL number = STRING [15] (INTEGER);
     LOCAL date = DATE (INTEGER);
-    LOCAL sum = NUMERIC[16,5] (INTEGER);
-    LOCAL currency = STRING[100](INTEGER);
-    LOCAL note = STRING[100](INTEGER);
-    LOCAL contract = Contract(INTEGER);
-    LOCAL message = STRING[2000] ();
+    LOCAL sum = NUMERIC [16,5] (INTEGER);
+    LOCAL currency = STRING [100] (INTEGER);
+    LOCAL note = STRING [100] (INTEGER);
+    LOCAL contract = Contract (INTEGER);
+    LOCAL message = STRING [2000] ();
     LOCAL count = INTEGER ();
     
     IMPORT XLS NOHEADER FROM f TO idPayment = B, idCompany, idLegalEntity, idContract, idAgreement, idAct, type, number, date, sum, currency, note;
     
-    contract(INTEGER i) <- (OVERRIDE contract(trim(idContract(i))),
-        [GROUP LAST Contract c ORDER date(c), c IF date(c) <= date(i) BY legalEntity(c), company(c), upper(nameType(c))](legalEntity(idLegalEntity(i)), legalEntity(idCompany(i)), upper(trim(type(i)))),
-        [GROUP LAST Contract c ORDER date(c), c IF date(c) <= date(i) BY legalEntity(c), company(c)](legalEntity(idLegalEntity(i)), legalEntity(idCompany(i))),
-        [GROUP LAST Contract c ORDER date(c), c BY legalEntity(c), company(c)](legalEntity(idLegalEntity(i)), legalEntity(idCompany(i)))) WHERE imported(i);
+    contract (INTEGER i) <- (OVERRIDE contract (trim (idContract (i))),
+        [GROUP LAST Contract c ORDER date (c), c IF date (c) <= date (i) BY legalEntity (c), company (c), upper (nameType (c))] (legalEntity (idLegalEntity (i)) , legalEntity (idCompany (i)), upper (trim (type (i)))),
+        [GROUP LAST Contract c ORDER date (c), c IF date (c) <= date (i) BY legalEntity (c), company (c)] (legalEntity (idLegalEntity (i)), legalEntity (idCompany (i)) ),
+        [GROUP LAST Contract c ORDER date (c), c BY legalEntity (c), company (c)] (legalEntity (idLegalEntity (i)), legalEntity (idCompany (i)))) WHERE imported (i);
     
-    message() <- '';
-    count() <- 0;
+    message () <- '';
+    count () <- 0;
     
-    FOR imported(INTEGER i) AND i > 1 AND NOT legalEntity(idLegalEntity(i)) DO {
-        message() <- CONCAT ' ', message() + '\r\nстрока:', (i + 1), 'id:', idPayment(i), 'Код организации:', idLegalEntity(i);
-        count() <- count() + 1;
+    FOR imported (INTEGER i) AND i> 1 AND NOT legalEntity (idLegalEntity (i)) DO {
+        message () <- CONCAT '', message () + '\ r \ nstring:', (i + 1), 'id:', idPayment (i), 'Organization code:', idLegalEntity (i);
+        count () <- count () + 1;
     }
     
-    IF count() > 0 THEN {
-        MESSAGE CONCAT ' ', 'Неимпортированные платежи, для которых не найдена организация: ', count(), message();
+    IF count ()> 0 THEN {
+        MESSAGE CONCAT '', 'Unimported payments for which no organization was found:', count (), message ();
     }
     
-    message() <- '';
-    count() <- 0;
+    message () <- '';
+    count () <- 0;
     
-    FOR imported(INTEGER i) AND i > 1 AND NOT isCompany(legalEntity(idCompany(i))) DO {
-        message() <- CONCAT ' ', message() + '\r\nстрока:', (i + 1), 'id:', idPayment(i), 'Код компании:', idCompany(i);
-        count() <- count() + 1;
+    FOR imported (INTEGER i) AND i> 1 AND NOT isCompany (legalEntity (idCompany (i))) DO {
+        message () <- CONCAT '', message () + '\ r \ nstring:', (i + 1), 'id:', idPayment (i), 'Company code:', idCompany (i);
+        count () <- count () + 1;
     }
     
-    IF count() > 0 THEN {
-        MESSAGE CONCAT ' ', 'Неимпортированные платежи, для которых не найдена компания: ', count(), message();
-    }  
+    IF count ()> 0 THEN {
+        MESSAGE CONCAT '', 'Unimported payments for which no company was found:', count (), message ();
+    }
     
-    FOR [GROUP SUM 1 IF INTEGER i > 1 BY trim(type(i))](STRING[50] type) AND type != '' 
-        AND NOT (GROUP MAX PaymentType t IF upper(name(t)) == upper(type)) DO NEW t = PaymentType {
+    FOR [GROUP SUM 1 IF INTEGER i> 1 BY trim (type (i))] (STRING [50] type) AND type! = ''
+        AND NOT (GROUP MAX PaymentType t IF upper (name (t)) == upper (type)) DO NEW t = PaymentType {
         
-        name(t) <- type; 
+        name (t) <- type;
     }
         
-    IF NOT lines() THEN {
+    IF NOT lines () THEN {
         
-//        FOR [GROUP SUM 1 IF INTEGER i > 0 AND contract(i) BY trim(idLegalEntity(i)), date(i), sum(i)](STRING[15] id, DATE date, NUMERIC[16,5] sum) 
-//            AND id != '' AND NOT payment(id, date, sum) DO NEW p = Payment {
-//            
-//            legalEntity(p) <- legalEntity(id);
-//            date(p) <- date;
-//            sum(p) <- sum;
-//        }
+// FOR [GROUP SUM 1 IF INTEGER i> 0 AND contract (i) BY trim (idLegalEntity (i)), date (i), sum (i)] (STRING [15] id, DATE date, NUMERIC [16, 5] sum)
+// AND id! = '' AND NOT payment (id, date, sum) DO NEW p = Payment {
+//
+// legalEntity (p) <- legalEntity (id);
+// date (p) <- date;
+// sum (p) <- sum;
+//}
         
-        FOR Payment p = payment(trim(idLegalEntity(INTEGER i)), date(i), sum(i)) AND company(contract(i)) = company(p) AND NOT contract(act(idAct(i))) != contract(i) AND i > 1 DO {
+        FOR Payment p = payment (trim (idLegalEntity (INTEGER i)), date (i), sum (i)) AND company (contract (i)) = company (p) AND NOT contract (act (idAct (i))) ! = contract (i) AND i> 1 DO {
             
-            contract(p) <- contract(i);
-            act(p) <- act(idAct(i));
-//            id(p) <- idPayment(i) IF (idPayment(i) AND trim(idPayment(i)) != '0');
-//            number(p) <- number(i);
-//            note(p) <- trim(note(i)) WHERE trim(note(i)) != '';
-//            currency(p) <- GROUP MAX Currency c IF shortName(c) == currency(i);
+            contract (p) <- contract (i);
+            act (p) <- act (idAct (i));
+// id (p) <- idPayment (i) IF (idPayment (i) AND trim (idPayment (i))! = '0');
+// number (p) <- number (i);
+// note (p) <- trim (note (i)) WHERE trim (note (i))! = '';
+// currency (p) <- GROUP MAX Currency c IF shortName (c) == currency (i);
         }
     }
     
-    IF lines() THEN {
-        FOR imported(INTEGER i) AND i > 1 AND legalEntity(idLegalEntity(i)) AND isCompany(legalEntity(idCompany(i))) DO NEW p = Payment {
+  IF lines () THEN {
+        FOR imported (INTEGER i) AND i> 1 AND legalEntity (idLegalEntity (i)) AND isCompany (legalEntity (idCompany (i))) DO NEW p = Payment {
         
-            legalEntity(p) <- legalEntity(idLegalEntity(i));
-            company(p) <- legalEntity(idCompany(i));
-            date(p) <- date(i);
-            sum(p) <- sum(i);
-            contract(p) <- contract(i);
-            id(p) <- idPayment(i) IF idPayment(i) AND trim(idPayment(i)) != '0';
-            agreement(p) <- agreement(idAgreement(i));
-            act(p) <- act(idAct(i));
-            number(p) <- number(i);
-            note(p) <- trim(note(i));
-            currency(p) <- currency(currency(i));
-            type(p) <- GROUP MAX PaymentType t IF upper(name(t)) == upper(type(i));
-        } 
+            legalEntity (p) <- legalEntity (idLegalEntity (i));
+            company (p) <- legalEntity (idCompany (i));
+            date (p) <- date (i);
+            sum (p) <- sum (i);
+            contract (p) <- contract (i);
+            id (p) <- idPayment (i) IF idPayment (i) AND trim (idPayment (i))! = '0';
+            agreement (p) <- agreement (idAgreement (i));
+            act (p) <- act (idAct (i));
+            number (p) <- number (i);
+            note (p) <- trim (note (i));
+            currency (p) <- currency (currency (i));
+            type (p) <- GROUP MAX PaymentType t IF upper (name (t)) == upper (type (i));
+        }
     }
 }
 
-importPaymentContracts 'Импорт привязки платежей к договорам' () {
+importPaymentContracts 'Import of binding payments to agreements' () {
     NEWSESSION INPUT f = FILE DO {
-        importPayments(f);
+        importPayments (f);
         APPLY;
     }
 }
 
-importPayments 'Импорт платежей' () {
+importPayments 'Import payments' () {
     NEWSESSION INPUT f = FILE DO {
-        lines() <- TRUE;
-        importPayments(f);
+        lines () <- TRUE;
+        importPayments (f);
         APPLY;
     }
 }
 
-FORM exportPayments 'Экспорт платежей'
+FORM exportPayments 'Export payments'
     OBJECTS p = Payment
     PROPERTIES (p) id, idCompany, idLegalEntity, idContract, idAgreement, idAct, nameType, number, date, sum, sidCurrency, note
-    ORDERS date(p)
+    ORDERS date (p)
 ;
 
-exportPayments 'Экспорт платежей' () {
+exportPayments 'Export payments' () {
     
-    LOCAL file = FILE();
+    LOCAL file = FILE ();
     
     PRINT exportPayments XLS TO file;
-    WRITE CLIENT DIALOG file() TO 'Платежи';
-    open(file(), 'Платежи');
+    WRITE CLIENT DIALOG file () TO 'Payments';
+    open (file (), 'Payments');
 }
 
-EXTEND FORM migrationData PROPERTIES() exportPayments, importPayments, importPaymentContracts;
+EXTEND FORM migrationData PROPERTIES () exportPayments, importPayments, importPaymentContracts;
 
 DESIGN migrationData {
     GROUP () {
-        NEW payments AFTER PROPERTY (exportPayments()) {
+        NEW payments AFTER PROPERTY (exportPayments ()) {
             type = CONTAINERH;
-            MOVE PROPERTY (importPayments());
-            MOVE PROPERTY (importPaymentContracts());
+            MOVE PROPERTY (importPayments ());
+            MOVE PROPERTY (importPaymentContracts ());
         }
     }
 }
