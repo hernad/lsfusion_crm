@@ -4,135 +4,135 @@ REQUIRE Act, EVAT;
 
 NAMESPACE Act;
 
-lastEVATAct 'Последний ЭСЧФ по акту' = GROUP LAST EVAT e ORDER date(e), e WHERE NOT cancelled(e) BY EVATDocument(e) MATERIALIZED ;
+lastEVATAct 'Last ESCF by act' = GROUP LAST EVAT e ORDER date (e), e WHERE NOT canceled (e) BY EVATDocument (e) MATERIALIZED;
 
-// запрет корр-ки акта, если у него есть ЭСЧФ
-forbidChange(Act a) += TRUE IF lastEVATAct(a) AND a IS Act;
+// prohibition of correcting the act, if it has an ESCF
+forbidChange (Act a) + = TRUE IF lastEVATAct (a) AND a IS Act;
 
-// Шаблон для текста в ЭСЧФ
-shablonEVATName 'Шаблон для текста в ЭСЧФ' = DATA ISTRING[250](ActType) ;
-EXTEND FORM actType PROPERTIES shablonEVATName(o) ;
-shablonEVATName 'Шаблон для текста в ЭСЧФ' (Act a) = shablonEVATName(type(a)) ;
+// Template for text in ESCF
+shablonEVATName 'Template for text in ESCF' = DATA ISTRING [250] (ActType);
+EXTEND FORM actType PROPERTIES shablonEVATName (o);
+shablonEVATName 'Template for text in ESCF' (Act a) = shablonEVATName (type (a));
 
-in 'Вкл.' = DATA LOCAL BOOLEAN (Act);
+in 'On' = DATA LOCAL BOOLEAN (Act);
 
-viewEVATActDateMore 'Начальная дата отображения актов: ' = DATA LOCAL DATE () ;
+viewEVATActDateMore 'Starting date for displaying acts:' = DATA LOCAL DATE ();
 
-isEVAT 'Формировать ЭСЧФ' = DATA BOOLEAN (LegalEntity);
-EXTEND FORM legalEntity PROPERTIES(o) isEVAT;
-EXTEND FORM legalEntities PROPERTIES(o) READONLY isEVAT;
+isEVAT 'Form ESCF' = DATA BOOLEAN (LegalEntity);
+EXTEND FORM legalEntity PROPERTIES (o) isEVAT;
+EXTEND FORM legalEntities PROPERTIES (o) READONLY isEVAT;
 
 DESIGN legalEntity {
-    bank{
-        MOVE PROPERTY (UNP(o));
-        MOVE PROPERTY (OKPO(o));
-        MOVE PROPERTY (isEVAT(o));
+    bank {
+        MOVE PROPERTY (UNP (o));
+        MOVE PROPERTY (OKPO (o));
+        MOVE PROPERTY (isEVAT (o));
     }
 }
 
-generateEVAT 'Сформировать ЭСЧФ' ()  {
+generateEVAT 'Generate ESCF' () {
     
     LOCAL count = INTEGER ();
-    count() <- 0;
+    count () <- 0;
     
-    FOR in(Act a) DO NEWSESSION NESTED LOCAL {
+    FOR in (Act a) DO NEWSESSION NESTED LOCAL {
         NEW e = EVAT {
-            EVATDocument(e) <- a;
-            generateSeriesNumber(e);
-            unpSender(e) <- '101262078';
-            date(e) <- currentDate();
-            customer(e) <- legalEntity(contract(a));
-            supplier(e) <- company(contract(a));
-            dataDateDoc(e) <- date(a);
-            numberContract(e) <- numberContract(a);
-            dateContract(e) <- dateContract(a);
-            numberDoc(e) <- number(a);
+            EVATDocument (e) <- a;
+            generateSeriesNumber (e);
+            unpSender (e) <- '101262078';
+            date (e) <- currentDate ();
+            customer (e) <- legalEntity (contract (a));
+            supplier (e) <- company (contract (a));
+            dataDateDoc (e) <- date (a);
+            numberContract (e) <- numberContract (a);
+            dateContract (e) <- dateContract (a);
+            numberDoc (e) <- number (a);
             
             NEW d = EVATDetail {
-                EVAT(d) <- e;
-                number(d) <- 1; 
-                quantity(d) <- 0;
-                price(d) <- 0;
-                sum(d) <- sum(a);
-                exciseSum(d) <- 0;
-                vatRate(d) <- 0;
-                vatRateType(d) <- 'NO_VAT';
-                vatSum(d) <- 0;
-                sumWithVAT(d) <- sum(d) + vatSum(d);
-                codeOced(d) <- '62010';
-                code(d) <- '';
-                name(d) <- shablonEVATName(a);
-                /// замена полей в шаблоне значениями
-                name(d) <- replace(name(d), 'Act.text', text(a)) ;
-                name(d) <- replace(name(d), 'Act.fromDate', OVERRIDE toChar(fromDate(a),'DD.MM.YYYY'),'?') ;
-                name(d) <- replace(name(d), 'Act.toDate', OVERRIDE toChar(toDate(a),'DD.MM.YYYY'),'?') ;
+                EVAT (d) <- e;
+                number (d) <- 1;
+                quantity (d) <- 0;
+                price (d) <- 0;
+                sum (d) <- sum (a);
+                exciseSum (d) <- 0;
+                vatRate (d) <- 0;
+                vatRateType (d) <- 'NO_VAT';
+                vatSum (d) <- 0;
+                sumWithVAT (d) <- sum (d) + vatSum (d);
+                codeOced (d) <- '62010';
+                code (d) <- '';
+                name (d) <- shablonEVATName (a);
+                /// replacing fields in a template with values
+                name (d) <- replace (name (d), 'Act.text', text (a));
+                name (d) <- replace (name (d), 'Act.fromDate', OVERRIDE toChar (fromDate (a), 'DD.MM.YYYY'), '?');
+                name (d) <- replace (name (d), 'Act.toDate', OVERRIDE toChar (toDate (a), 'DD.MM.YYYY'), '?');
                 ///
-                descriptionType(d) <- DescriptionType.vatExcemption;
+                descriptionType (d) <- DescriptionType.vatExcemption;
             }
         }
-        in(a) <- NULL;
-        count() <- count() + 1;
+        in (a) <- NULL;
+        count () <- count () + 1;
         APPLY NESTED LOCAL;
     }
-    MESSAGE CONCAT ' ', 'Количество созданных ЭСЧФ: ', count() ;
+    MESSAGE CONCAT '', 'Number of created ESCFs:', count ();
 }
 
+FORM ActEVATs 'Generation of electronic invoices'
+    
+     OBJECTS date = DATE PANEL
+     PROPERTIES value = VALUE (date)
+    
+     OBJECTS a = Act
+     PROPERTIES (a) in
+     PROPERTIES (a) READONLY nameCompany, number, date, dateSending, dateReceiving, name, nameType, numberContract, numberAgreement, nameLegalEntity, sum, textString SELECTOR
+     PROPERTIES () generateEVAT DRAW a TOOLBAR
+     FILTERS NOT lastEVATAct (a) AND isEVAT (company (a)) AND (NOT date OR date (a)> = date)
+    
+     OBJECTS dates = (dFrom = DATE, dTo = DATE) PANEL
+     PROPERTIES dFrom = VALUE (dFrom), dTo = VALUE (dTo)
 
-FORM ActEVATs 'Формирование электронных счет-фактур'
     
-    OBJECTS date = DATE PANEL
-    PROPERTIES value = VALUE(date)
-    
-    OBJECTS a = Act
-    PROPERTIES(a) in
-    PROPERTIES(a) READONLY nameCompany, number, date, dateSending, dateReceiving, name, nameType, numberContract, numberAgreement, nameLegalEntity, sum, textString SELECTOR
-    PROPERTIES() generateEVAT DRAW a TOOLBAR
-    FILTERS NOT lastEVATAct(a) AND isEVAT(company(a)) AND (NOT date OR date(a) >= date)
-    
-    OBJECTS dates = (dFrom = DATE, dTo = DATE) PANEL
-    PROPERTIES dFrom = VALUE(dFrom), dTo = VALUE(dTo)
-    
-    OBJECTS e = EVAT
-    PROPERTIES(e) READONLYIF isReadonly() exported, cancelled, unpSender, number, exportYear, exportNumber, dateDoc, numberDoc, seriesDoc,
+  OBJECTS e = EVAT
+    PROPERTIES (e) READONLYIF isReadonly () exported, canceled, unpSender, number, exportYear, exportNumber, dateDoc, numberDoc, seriesDoc,
                   nameSupplier, nameCustomer, totalSum,
                   totalExciseSum, totalVATSum, totalSumWithVAT
     
-    FILTERS date(e) >= dFrom, date(e) <= dTo
+    FILTERS date (e)> = dFrom, date (e) <= dTo
     
-    FILTERGROUP exported FILTER 'Выгруженные' exported(e) 
-                         FILTER 'Не выгруженные' noexported(e) 
-    FILTERGROUP cancelled FILTER 'Отмененные' cancelled(e) 
-                          FILTER 'Не отмененные' nocancelled(e) DEFAULT 
+    FILTERGROUP exported FILTER 'Unloaded' exported (e)
+                         FILTER 'Not exported' noexported (e)
+    FILTERGROUP canceled FILTER 'Canceled' canceled (e)
+                          FILTER 'Not canceled' nocancelled (e) DEFAULT
 
     EVENTS
-        ON INIT { SEEK ActEVATs.date = DATE(TEXT(currentYear())+'01'+'01'); }
+        ON INIT {SEEK ActEVATs.date = DATE (TEXT (currentYear ()) + '01' + '01'); }
 ;
 
 DESIGN ActEVATs {
-    OBJECTS{
+    OBJECTS {
 
-        MOVE BOX(date) BEFORE BOX(e) { 
+        MOVE BOX (date) BEFORE BOX (e) {
             caption = '';
             type = CONTAINERH;
-            PROPERTY(value){caption = 'Дата начала отображения актов';} 
+            PROPERTY (value) {caption = 'Start date of displaying certificates';}
         }
-        NEW acts BEFORE BOX(e){
+        NEW acts BEFORE BOX (e) {
             type = TABBED;
             fill = 1;
             
-            MOVE BOX(a) {
-                MOVE PROPERTY(generateEVAT());
+            MOVE BOX (a) {
+                MOVE PROPERTY (generateEVAT ());
             }
         }
-        NEW filters BEFORE BOX(e) {
-            MOVE BOX(dates) {
-                GROUP(,dates) {
+        NEW filters BEFORE BOX (e) {
+            MOVE BOX (dates) {
+                GROUP (, dates) {
                     type = CONTAINERH;
-                    PROPERTY(dFrom) {
-                        caption = 'Дата с';
+                    PROPERTY (dFrom) {
+                        caption = 'Date since';
                     }
-                    PROPERTY(dTo) {
-                        caption = 'Дата по';
+                    PROPERTY (dTo) {
+                        caption = 'Date by';
                     }
                 }
             }
@@ -146,65 +146,65 @@ NAVIGATOR {
     }
 }
 
-// Сверка сумм переданных ЭСЧФ с суммами актов в разрезе организаций 
-CLASS CompareEVAT 'Сравнение ЭСЧФ';
+// Reconciliation of the amounts transferred by the ESCF with the amounts of acts in the context of organizations
+CLASS CompareEVAT 'ESCF Comparison';
 
-unpSupplier 'УНП поставщика' = DATA STRING[9] (CompareEVAT) CHARWIDTH 5;
-unpCustomer 'УНП получателя' = DATA STRING[9] (CompareEVAT) CHARWIDTH 5;
-nameCustomer 'Наименование получателя' = DATA STRING[250] (CompareEVAT) CHARWIDTH 100;
-sumAct 'Сумма из актов' = DATA NUMERIC[16,2] (CompareEVAT);
-sumWithVAT 'Сумма с НДС из CSV-файла' = DATA NUMERIC[16,2] (CompareEVAT);
+unpSupplier 'Supplier NOD' = DATA STRING [9] (CompareEVAT) CHARWIDTH 5;
+unpCustomer 'UNP of the recipient' = DATA STRING [9] (CompareEVAT) CHARWIDTH 5;
+nameCustomer 'Beneficiary's name' = DATA STRING [250] (CompareEVAT) CHARWIDTH 100;
+sumAct 'Sum of acts' = DATA NUMERIC [16,2] (CompareEVAT);
+sumWithVAT 'Amount with VAT from CSV file' = DATA NUMERIC [16,2] (CompareEVAT);
 
-sumDiff 'Разница' (CompareEVAT c) = sumAct(c) (-) sumWithVAT(c);
+sumDiff 'Difference' (CompareEVAT c) = sumAct (c) (-) sumWithVAT (c);
 
-compareEVAT  = GROUP AGGR CompareEVAT ce BY unpSupplier(ce), unpCustomer(ce);
+compareEVAT = GROUP AGGR CompareEVAT ce BY unpSupplier (ce), unpCustomer (ce);
 
-controlWithCsvFileLegalEntity 'Сравнить' (DATE dFrom, DATE dTo)  { 
+controlWithCsvFileLegalEntity 'Compare' (DATE dFrom, DATE dTo) {
     
-    LOCAL unpSupplier  = STRING[9](INTEGER);
-    LOCAL unpCustomer  = STRING[9](INTEGER);
-    LOCAL nameCustomer = STRING[250](INTEGER);
-    LOCAL sumWithVAT   = NUMERIC[16,2](INTEGER);
+    LOCAL unpSupplier = STRING [9] (INTEGER);
+    LOCAL unpCustomer = STRING [9] (INTEGER);
+    LOCAL nameCustomer = STRING [250] (INTEGER);
+    LOCAL sumWithVAT = NUMERIC [16,2] (INTEGER);
     
     INPUT f = FILE DO {
         
         DELETE CompareEVAT li WHERE li IS CompareEVAT;
         
-        // инфа из актов
-        FOR isEVAT(company(Act a)) AND date(a) >= dFrom AND date(a) <= dTo DO {
-            IF NOT compareEVAT(UNP(company(a)), UNP(legalEntity(a))) THEN {
+        // infa from acts
+        FOR isEVAT (company (Act a)) AND date (a)> = dFrom AND date (a) <= dTo DO {
+            IF NOT compareEVAT (UNP (company (a)), UNP (legalEntity (a))) THEN {
                 NEW ce = CompareEVAT {
-                    unpSupplier(ce) <- UNP(company(a)) ;
-                    unpCustomer(ce) <- UNP(legalEntity(a));
-                    nameCustomer(ce) <- name(legalEntity(a));
-                    sumAct(ce) <- sum(a);
-                    sumWithVAT(ce) <- 0.0 ;
+                    unpSupplier (ce) <- UNP (company (a));
+                    unpCustomer (ce) <- UNP (legalEntity (a));
+                    nameCustomer (ce) <- name (legalEntity (a));
+                    sumAct (ce) <- sum (a);
+                    sumWithVAT (ce) <- 0.0;
                 }
             }
             ELSE {
-                FOR CompareEVAT ce = compareEVAT(UNP(company(a)), UNP(legalEntity(a))) DO {
-                    sumAct(ce) <- sumAct(ce) + sum(a) ;
+                FOR CompareEVAT ce = compareEVAT (UNP (company (a)), UNP (legalEntity (a))) DO {
+                    sumAct (ce) <- sumAct (ce) + sum (a);
                 }
             }
         }
         
-        // инфа из csv-файла
+        // info from csv file
         IMPORT CSV ';' NOHEADER CHARSET 'cp1251' FROM f AS FILE TO unpSupplier = B, unpCustomer = I,
                        nameCustomer = K, sumWithVAT = AQ;
         
-        FOR trim(unpCustomer(INTEGER i)) AND i > 1 DO {
-            IF NOT compareEVAT(unpSupplier(i), unpCustomer(i)) THEN {
+        FOR trim (unpCustomer (INTEGER i)) AND i> 1 DO {
+            IF NOT compareEVAT (unpSupplier (i), unpCustomer (i)) THEN {
                 NEW ce = CompareEVAT {
-                    unpSupplier(ce) <- unpSupplier(i);
-                    unpCustomer(ce) <- unpCustomer(i);
-                    nameCustomer(ce) <- nameCustomer(i);
-                    sumAct(ce) <- 0.0;
-                    sumWithVAT(ce) <- sumWithVAT(i);
+                    unpSupplier (ce) <- unpSupplier (i);
+                    unpCustomer (ce) <- unpCustomer (i);
+                    nameCustomer (ce) <- nameCustomer (i);
+                    sumAct (ce) <- 0.0;
+                    sumWithVAT (ce) <- sumWithVAT (i);
                 }
             }
             ELSE {
-                FOR CompareEVAT ce = compareEVAT(unpSupplier(i), unpCustomer(i)) DO {
-                    sumWithVAT(ce) <- sumWithVAT(ce) + sumWithVAT(i) ;
+                FOR CompareEVAT ce = compareEVAT (unpSupplier (i), unpCustomer (i)) DO {
+                    sumWithVAT (ce) <- sumWithVAT (ce) + sumWithVAT (i);
                 }
             }
         }
@@ -212,29 +212,29 @@ controlWithCsvFileLegalEntity 'Сравнить' (DATE dFrom, DATE dTo)  {
     }
 }
 
-FORM compareEVAT 'Сравнение сумм по организациям в актах и ЭСЧФ из CSV-файла'
+FORM compareEVAT 'Comparison of amounts by organizations in acts and ESCF from a CSV file'
     OBJECTS dates = (dFrom = DATE, dTo = DATE) PANEL
-    PROPERTIES dFrom = VALUE(dFrom), dTo = VALUE(dTo)
+    PROPERTIES dFrom = VALUE (dFrom), dTo = VALUE (dTo)
     
-    PROPERTIES DRAW dates controlWithCsvFileLegalEntity(dFrom, dTo)  
+    PROPERTIES DRAW dates controlWithCsvFileLegalEntity (dFrom, dTo)
     
     OBJECTS ce = CompareEVAT
-    PROPERTIES(ce) READONLY  unpSupplier, unpCustomer, nameCustomer, sumAct, sumWithVAT, sumDiff  
-    ORDERS unpSupplier(ce), nameCustomer(ce)
-    FILTERGROUP defaultSum FILTER 'Несовпадающие суммы' NOT sumAct(ce)==sumWithVAT(ce) 'F10' DEFAULT
+    PROPERTIES (ce) READONLY unpSupplier, unpCustomer, nameCustomer, sumAct, sumWithVAT, sumDiff
+    ORDERS unpSupplier (ce), nameCustomer (ce)
+    FILTERGROUP defaultSum FILTER 'Mismatched Sums' NOT sumAct (ce) == sumWithVAT (ce) 'F10' DEFAULT
 ;
 
 DESIGN compareEVAT {
-    MOVE BOX(dates);
+    MOVE BOX (dates);
     NEW compareBox {
         fill = 1;
-        MOVE BOX(ce);
+        MOVE BOX (ce);
     }
     MOVE TOOLBARBOX;
 }
   
 NAVIGATOR {
     EVATFolder {
-        NEW compareEVAT ;
+        NEW compareEVAT;
     }
-}  
+}
