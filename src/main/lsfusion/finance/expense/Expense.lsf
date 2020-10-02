@@ -4,101 +4,101 @@ REQUIRE LegalEntity, Currency, AccountLedger;
 
 NAMESPACE Expense;
 
-CLASS Expense 'Расход' : AccountLedger;
+CLASS Expense 'Expense': AccountLedger;
 TABLE expense (Expense);
 
-company = DATA LegalEntity(Expense);
-idCompany 'Код компании' (Expense e) = id(company(e));
-nameCompany 'Компания' (Expense e) = name(company(e));
+company = DATA LegalEntity (Expense);
+idCompany 'Company code' (Expense e) = id (company (e));
+nameCompany 'Company' (Expense e) = name (company (e));
 
-legalEntity = DATA LegalEntity(Expense);
-idLegalEntity 'Код организации' (Expense e) = id(legalEntity(e));
-nameLegalEntity 'Организация' (Expense e) = name(legalEntity(e));
-customer (Expense e) = customer(legalEntity(e));
-nameCustomer 'Клиент' (Expense e) = name(customer(legalEntity(e)));
+legalEntity = DATA LegalEntity (Expense);
+idLegalEntity 'Organization code' (Expense e) = id (legalEntity (e));
+nameLegalEntity 'Organization' (Expense e) = name (legalEntity (e));
+customer (Expense e) = customer (legalEntity (e));
+nameCustomer 'Customer' (Expense e) = name (customer (legalEntity (e)));
 
-CLASS ExpenseType 'Вид оплаты';
+CLASS ExpenseType 'Type of payment';
 TABLE expenseType (ExpenseType);
 
-name 'Наименование' = DATA ISTRING[100] (ExpenseType) CHARWIDTH 8;
-skipExpense 'Не учитывать в расходах' = DATA BOOLEAN (ExpenseType);
+name 'Name' = DATA ISTRING [100] (ExpenseType) CHARWIDTH 8;
+skipExpense 'Do not include in expenses' = DATA BOOLEAN (ExpenseType);
 
-FORM expenseType 'Вид оплаты'
+FORM expenseType 'Payment type'
     OBJECTS o = ExpenseType PANEL
-    PROPERTIES(o) name, skipExpense
+    PROPERTIES (o) name, skipExpense
     
     EDIT ExpenseType OBJECT o
 ;
 
-FORM expenseTypes 'Виды оплаты'
+FORM expenseTypes 'Types of payment'
     OBJECTS o = ExpenseType
-    PROPERTIES(o) READONLY name, skipExpense
-    PROPERTIES(o) NEWSESSION NEW, EDIT, DELETE
+    PROPERTIES (o) READONLY name, skipExpense
+    PROPERTIES (o) NEWSESSION NEW, EDIT, DELETE
     
     LIST ExpenseType OBJECT o
 ;
 
-type = DATA ExpenseType(Expense);
-nameType 'Вид оплаты' (Expense e) = name(type(e));
+type = DATA ExpenseType (Expense);
+nameType 'Type of payment' (Expense e) = name (type (e));
 
-date 'Дата расхода' = DATA DATE (Expense);
-datePayment 'Дата оплаты' = DATA DATE (Expense);
-sum 'Сумма' = DATA NUMERIC[16,5](Expense);
+date 'Expense date' = DATA DATE (Expense);
+datePayment 'Payment date' = DATA DATE (Expense);
+sum 'Amount' = DATA NUMERIC [16,5] (Expense);
 
-currency = DATA Currency(Expense);
-shortNameCurrency 'Валюта' (Expense e) = shortName(currency(e));
-sidCurrency 'Валюта' (Expense e) = sid(currency(e));
-sumCurrency 'Сумма в валюте' (Expense e) = round2(sum(e) * OVERRIDE (rateOn(defaultTypeExchange(), currency(e), date(e))), 1) MATERIALIZED;
+currency = DATA Currency (Expense);
+shortNameCurrency 'Currency' (Expense e) = shortName (currency (e));
+sidCurrency 'Currency' (Expense e) = sid (currency (e));
+sumCurrency 'Amount in currency' (Expense e) = round2 (sum (e) * OVERRIDE (rateOn (defaultTypeExchange (), currency (e), date (e))), 1) MATERIALIZED;
 
-note 'Примечание' = DATA TEXT (Expense);
-noteString 'Примечание' (Expense e) = ISTRING[1000](note(e)) CHARWIDTH 20;
+note 'Note' = DATA TEXT (Expense);
+noteString 'Note' (Expense e) = ISTRING [1000] (note (e)) CHARWIDTH 20;
 
-account = DATA Account(Expense);
-numberAccount 'Р/с' (Expense p) = number(account(p)) CHARWIDTH 10;
+account = DATA Account (Expense);
+numberAccount 'P / s' (Expense p) = number (account (p)) CHARWIDTH 10;
 
-accountTo = DATA Account(Expense);
-numberAccountTo 'Р/с на' (Expense p) = number(accountTo(p)) CHARWIDTH 10;
+accountTo = DATA Account (Expense);
+numberAccountTo 'P / s to' (Expense p) = number (accountTo (p)) CHARWIDTH 10;
 
-WHEN LOCAL CHANGED (company(Expense p)) AND NOT CHANGED (account(p)) DO {
-    account(p) <- account(company(p));
+WHEN LOCAL CHANGED (company (Expense p)) AND NOT CHANGED (account (p)) DO {
+    account (p) <- account (company (p));
 }
 
-CONSTRAINT account(Expense p) AND NOT company(p) == legalEntity(account(p)) CHECKED BY account[Expense] MESSAGE 'Счёт расхода не соответствует компании';
-CONSTRAINT accountTo(Expense p) AND NOT legalEntity(p) == legalEntity(accountTo(p)) CHECKED BY accountTo[Expense] MESSAGE 'Счёт на расхода не соответствует организации';
-CONSTRAINT company(Expense p) AND NOT isCompany(company(p)) CHECKED BY company[Expense] MESSAGE 'Компания расхода не является компанией';
+CONSTRAINT account (Expense p) AND NOT company (p) == legalEntity (account (p)) CHECKED BY account [Expense] MESSAGE 'The expense account does not match the company';
+CONSTRAINT accountTo (Expense p) AND NOT legalEntity (p) == legalEntity (accountTo (p)) CHECKED BY accountTo [Expense] MESSAGE 'Expense account does not match the organization';
+CONSTRAINT company (Expense p) AND NOT isCompany (company (p)) CHECKED BY company [Expense] MESSAGE 'Expense company is not a company';
 
-CLASS ExpenseAccountLedger : AccountLedger;
-expenseAccountLedger = AGGR ExpenseAccountLedger WHERE accountTo(Expense expense);
+CLASS ExpenseAccountLedger: AccountLedger;
+expenseAccountLedger = AGGR ExpenseAccountLedger WHERE accountTo (Expense expense);
 
-date(ExpenseAccountLedger a) += date(expense(a)); 
-sum(ExpenseAccountLedger a) += sum(expense(a)); 
-note(ExpenseAccountLedger a) += ISTRING[250] (note(expense(a)));
-account(ExpenseAccountLedger a) += accountTo(expense(a)); 
+date (ExpenseAccountLedger a) + = date (expense (a));
+sum (ExpenseAccountLedger a) + = sum (expense (a));
+note (ExpenseAccountLedger a) + = ISTRING [250] (note (expense (a)));
+account (ExpenseAccountLedger a) + = accountTo (expense (a));
 
-date(Expense p) += date(p);
-sum(Expense p) += -sum(p);
-note(Expense p) += ISTRING[250] (note(p));
-account(Expense p) += account(p);
+date (Expense p) + = date (p);
+sum (Expense p) + = -sum (p);
+note (Expense p) + = ISTRING [250] (note (p));
+account (Expense p) + = account (p);
 
-FORM expense 'Расход'
+FORM expense 'Expense'
     OBJECTS o = Expense PANEL
-    PROPERTIES(o) nameCompany, nameLegalEntity, nameCustomer, date, datePayment, nameType, sum, shortNameCurrency, sumCurrency, note, 
+    PROPERTIES (o) nameCompany, nameLegalEntity, nameCustomer, date, datePayment, nameType, sum, shortNameCurrency, sumCurrency, note,
                   numberAccount, numberAccountTo
     
     EDIT Expense OBJECT o
 ;
 
-FORM expenses 'Расходы'
+FORM expenses 'Expenses'
     OBJECTS o = Expense
-    PROPERTIES(o) READONLY nameCompany, nameLegalEntity, nameCustomer, date, datePayment, nameType, sum, shortNameCurrency, sumCurrency, numberAccount, numberAccountTo, noteString
-    PROPERTIES(o) NEWSESSION NEW, EDIT, DELETE
-    ORDERS date(o), datePayment(o)
+    PROPERTIES (o) READONLY nameCompany, nameLegalEntity, nameCustomer, date, datePayment, nameType, sum, shortNameCurrency, sumCurrency, numberAccount, numberAccountTo, noteString
+    PROPERTIES (o) NEWSESSION NEW, EDIT, DELETE
+    ORDERS date (o), datePayment (o)
 ;
 
-FORM dialogExpenses 'Расходы'
+FORM dialogExpenses 'Expenses'
     OBJECTS o = Expense
-    PROPERTIES(o) READONLY nameCompany, nameLegalEntity, nameCustomer, date, datePayment, nameType, sum, shortNameCurrency, sumCurrency, numberAccount, numberAccountTo, noteString
-    ORDERS date(o), datePayment(o)
+    PROPERTIES (o) READONLY nameCompany, nameLegalEntity, nameCustomer, date, datePayment, nameType, sum, shortNameCurrency, sumCurrency, numberAccount, numberAccountTo, noteString
+    ORDERS date (o), datePayment (o)
     
     LIST Expense OBJECT o
 ;
