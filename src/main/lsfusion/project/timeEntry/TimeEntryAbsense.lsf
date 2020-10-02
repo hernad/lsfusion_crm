@@ -2,33 +2,33 @@ MODULE TimeEntryAbsense;
 
 REQUIRE TimeEntry, EmployeeAbsence;
 
-absense = DATA Absence(TimeEntry);
-descriptionAbsense 'Отсутствие' (TimeEntry t) = CONCAT '-', toDateDDMMYY(dateFrom(absense(t))), toDateDDMMYY(dateTo(absense(t)));
+absense = DATA Absence (TimeEntry);
+descriptionAbsense 'Absence' (TimeEntry t) = CONCAT '-', toDateDDMMYY (dateFrom (absense (t))), toDateDDMMYY (dateTo (absense (t)));
 
-workedHours 'Отработано часов' (Absence a) = GROUP SUM hours(TimeEntry t) BY absense(t);
+workedHours 'Worked hours' (Absence a) = GROUP SUM hours (TimeEntry t) BY absense (t);
 
-CONSTRAINT workedHours(Absence a) > hours(a) MESSAGE 'Отработано часов не может быть больше часов остутствия';
-CONSTRAINT absense(TimeEntry t) AND employee(t) AND NOT employee(t) == employee(absense(t)) CHECKED BY absense[TimeEntry] MESSAGE 'Сотрудник не совпадает с сотрудником отстутствия';
+CONSTRAINT workedHours (Absence a)> hours (a) MESSAGE 'The hours worked cannot exceed hours of absence';
+CONSTRAINT absense (TimeEntry t) AND employee (t) AND NOT employee (t) == employee (absense (t)) CHECKED BY absense [TimeEntry] MESSAGE 'The employee does not match the absent employee';
 
-FORM dialogAbsense 'Отсутствия'
-    OBJECTS t = TimeEntry PANEL 
-    OBJECTS a = Absence LAST 
+FORM dialogAbsense 'Absences'
+    OBJECTS t = TimeEntry PANEL
+    OBJECTS a = Absence LAST
     PROPERTIES (a) READONLY id, nameEmployee, nameReason, dateFrom, dateTo, hours, workedHours, workingHours, date, note
-    ORDERS date(a)
+    ORDERS date (a)
     
-    FILTERS employee(t) == employee(a)
+    FILTERS employee (t) == employee (a)
 ;
 
-changeAbsense 'Редактировать отсутствие' (TimeEntry t) {
+changeAbsense 'Edit absence' (TimeEntry t) {
     DIALOG dialogAbsense OBJECTS t = t, a INPUT NULL DO {
-        absense(t) <- a;
+        absense (t) <- a;
     }
 }
 
-EXTEND FORM timeEntry PROPERTIES descriptionAbsense(o) ON CHANGE changeAbsense(o);
+EXTEND FORM timeEntry PROPERTIES descriptionAbsense (o) ON CHANGE changeAbsense (o);
 
 DESIGN timeEntry {
     data {
-        MOVE PROPERTY (descriptionAbsense(o));
+        MOVE PROPERTY (descriptionAbsense (o));
     }
 }
