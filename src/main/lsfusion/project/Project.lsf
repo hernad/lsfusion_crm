@@ -4,50 +4,50 @@ REQUIRE Customer;
 
 NAMESPACE Project;
 
-CLASS Project 'Проект';
+CLASS Project 'Project';
 TABLE project (Project);
 
-id 'Код' = DATA STRING[15] (Project) INDEXED CHARWIDTH 5 IN id;
+id 'Code' = DATA STRING [15] (Project) INDEXED CHARWIDTH 5 IN id;
 
-name 'Наименование' = DATA ISTRING[100] (Project) CHARWIDTH 15 IN id;
-identifier 'Идентификатор' = DATA ISTRING[100] (Project) CHARWIDTH 15 IN id;
+name 'Name' = DATA ISTRING [100] (Project) CHARWIDTH 15 IN id;
+identifier 'Identifier' = DATA ISTRING [100] (Project) CHARWIDTH 15 IN id;
 
-customer = DATA Customer(Project);
-nameCustomer 'Клиент' (Project p) = name(customer(p));
+customer = DATA Customer (Project);
+nameCustomer 'Customer' (Project p) = name (customer (p));
 
-inactive 'Неактивный' = DATA BOOLEAN (Project);
-active 'Активный' (Project p) = NOT inactive(p);
+inactive 'Inactive' = DATA BOOLEAN (Project);
+active 'Active' (Project p) = NOT inactive (p);
 
-merge (Customer from, Customer to) + { customer(Project p) <- to WHERE customer(p) = from; }
+merge (Customer from, Customer to) + {customer (Project p) <- to WHERE customer (p) = from; }
 
-FORM project 'Проект'
+FORM project 'Project'
     OBJECTS o = Project PANEL
-    PROPERTIES(o) id, name, identifier, nameCustomer, inactive
+    PROPERTIES (o) id, name, identifier, nameCustomer, inactive
     
     EDIT Project OBJECT o
 ;
 
-FORM projects 'Проекты'
+FORM projects 'Projects'
     OBJECTS o = Project
-    PROPERTIES(o) READONLYIF isReadonly() id, name, identifier, nameCustomer, inactive
-    PROPERTIES(o) NEWSESSION NEW, EDIT, DELETE
-    ORDERS name(o)
-    FILTERGROUP active FILTER 'Активные' NOT inactive(o) DEFAULT 
+    PROPERTIES (o) READONLYIF isReadonly () id, name, identifier, nameCustomer, inactive
+    PROPERTIES (o) NEWSESSION NEW, EDIT, DELETE
+    ORDERS name (o)
+    FILTERGROUP active FILTER 'Active' NOT inactive (o) DEFAULT
 ;
 
-@extendFormEditable(projects);
+@extendFormEditable (projects);
 
-FORM dialogProjects 'Проекты'
+FORM dialogProjects 'Projects'
     OBJECTS o = Project
-    PROPERTIES(o) READONLY id, name, identifier, nameCustomer, inactive
-    ORDERS name(o)
-    FILTERGROUP active FILTER 'Активные' NOT inactive(o) DEFAULT 
+    PROPERTIES (o) READONLY id, name, identifier, nameCustomer, inactive
+    ORDERS name (o)
+    FILTERGROUP active FILTER 'Active' NOT inactive (o) DEFAULT
     
     LIST Project OBJECT o
 ;
 
 NAVIGATOR {
-    NEW FOLDER project 'Проекты' BEFORE masterData WINDOW toolbar IMAGE 'project.png' {
+    NEW FOLDER project 'Projects' BEFORE masterData WINDOW toolbar IMAGE 'project.png' {
         NEW projects;
     }
 }
