@@ -5,93 +5,93 @@ REQUIRE Customer, LegalEntity;
 NAMESPACE Doc;
 
 NAVIGATOR {
-    NEW FOLDER contractFolder 'Документы' BEFORE masterData WINDOW toolbar IMAGE 'document.png' { }
+    NEW FOLDER contractFolder 'Documents' BEFORE masterData WINDOW toolbar IMAGE 'document.png' {}
 }
 
-CLASS ABSTRACT Document 'Документ';
+CLASS ABSTRACT Document 'Document';
 
-id 'Код' = ABSTRACT STRING[15] (Document) IN id CHARWIDTH 5;
-number 'Номер' = ABSTRACT STRING[15](Document) IN id CHARWIDTH 10;
-date 'Дата' = ABSTRACT DATE (Document) IN id;
-name 'Наименование' = ABSTRACT ISTRING[150](Document) IN id CHARWIDTH 20;
-dateSigningCompany 'Дата подписания компанией' = ABSTRACT DATE (Document);
-dateSending 'Дата отправки' = ABSTRACT DATE (Document);
-dateSigningCustomer 'Дата подписания клиентом' = ABSTRACT DATE (Document);
-dateReceiving 'Дата получения' = ABSTRACT DATE (Document);
-dateClosing 'Дата закрытия' = ABSTRACT DATE (Document);
-note 'Примечание' = ABSTRACT ISTRING[250](Document);
-file 'Файл' = ABSTRACT FILE (Document);
-sum 'Сумма' = ABSTRACT NUMERIC[16,5](Document);
-paid 'Оплачено' = ABSTRACT NUMERIC[16,5](Document);
-balance 'Остаток' (Document d) = sum(d) (-) paid(d);
-dateLastPaid 'Дата последней оплаты' = ABSTRACT DATE (Document);
-description 'Описание' = ABSTRACT ISTRING[250] (Document) CHARWIDTH 25;
-fileName 'Имя файла' = ABSTRACT ISTRING[250](Document);
-text 'Текст' = ABSTRACT TEXT (Document);
+id 'Code' = ABSTRACT STRING [15] (Document) IN id CHARWIDTH 5;
+number 'Number' = ABSTRACT STRING [15] (Document) IN id CHARWIDTH 10;
+date 'Date' = ABSTRACT DATE (Document) IN id;
+name 'Name' = ABSTRACT ISTRING [150] (Document) IN id CHARWIDTH 20;
+dateSigningCompany 'Date signed by the company' = ABSTRACT DATE (Document);
+dateSending 'Date sent' = ABSTRACT DATE (Document);
+dateSigningCustomer 'Date signed by customer' = ABSTRACT DATE (Document);
+dateReceiving 'Date received' = ABSTRACT DATE (Document);
+dateClosing 'Date Closed' = ABSTRACT DATE (Document);
+note 'Note' = ABSTRACT ISTRING [250] (Document);
+file 'File' = ABSTRACT FILE (Document);
+sum 'Amount' = ABSTRACT NUMERIC [16,5] (Document);
+paid 'Paid' = ABSTRACT NUMERIC [16,5] (Document);
+balance 'Remaining' (Document d) = sum (d) (-) paid (d);
+dateLastPaid 'Date of last payment' = ABSTRACT DATE (Document);
+description 'Description' = ABSTRACT ISTRING [250] (Document) CHARWIDTH 25;
+fileName 'File name' = ABSTRACT ISTRING [250] (Document);
+text 'Text' = ABSTRACT TEXT (Document);
 
 customer = ABSTRACT Customer (Document);
-nameCustomer 'Клиент' (Document d) = name(customer(d));
+nameCustomer 'Customer' (Document d) = name (customer (d));
 
-legalEntity = ABSTRACT LegalEntity(Document);
-nameLegalEntity 'Организация' (Document d) = name(legalEntity(d)); 
-fullNameLegalEntity 'Организация' (Document d) = overName(legalEntity(d)); 
+legalEntity = ABSTRACT LegalEntity (Document);
+nameLegalEntity 'Organization' (Document d) = name (legalEntity (d));
+fullNameLegalEntity 'Organization' (Document d) = overName (legalEntity (d));
 
-company = ABSTRACT LegalEntity(Document);
-nameCompany 'Компания' (Document d) = name(company(d)); 
+company = ABSTRACT LegalEntity (Document);
+nameCompany 'Company' (Document d) = name (company (d));
 
-CLASS DocType 'Вид документа';
-name 'Наименование' (DocType d) = staticCaption(d) IF d IS DocType CHARWIDTH 21;
+CLASS DocType 'Document type';
+name 'Name' (DocType d) = staticCaption (d) IF d IS DocType CHARWIDTH 21;
 
-FORM dialogDocTypes 'Типы документа'
+FORM dialogDocTypes 'Document Types'
     OBJECTS d = DocType
-    PROPERTIES READONLY name(d)
+    PROPERTIES READONLY name (d)
     
     LIST DocType OBJECT d
 ;
 
-docType = ABSTRACT DocType(Document);
-nameDocType 'Вид документа' (Document d) = name(docType(d));
+docType = ABSTRACT DocType (Document);
+nameDocType 'Document type' (Document d) = name (docType (d));
 
-WHEN LOCAL SET (Document d IS Document) AND NOT date(d) DO {
-    date(d) <- currentDate();    
+WHEN LOCAL SET (Document d IS Document) AND NOT date (d) DO {
+    date (d) <- currentDate ();
 }
 
-CLASS SendingWay 'Способ отправки документа';
-TABLE sendingWay(SendingWay);
+CLASS SendingWay 'Document sending method';
+TABLE sendingWay (SendingWay);
 
-name 'Наименование' = DATA STRING[50](SendingWay) CHARWIDTH 15;
-mail 'Почтой' = DATA BOOLEAN (SendingWay);
+name 'Name' = DATA STRING [50] (SendingWay) CHARWIDTH 15;
+mail 'By mail' = DATA BOOLEAN (SendingWay);
 
-FORM contractSendingWay 'Способ отправки документа'
+FORM contractSendingWay 'Method of sending the document'
     OBJECTS o = SendingWay PANEL
-    PROPERTIES(o) name, mail
+    PROPERTIES (o) name, mail
     
     EDIT SendingWay OBJECT o
 ;
 
-FORM contractSendingWays 'Способы отправки документа'
+FORM contractSendingWays 'Document sending methods'
     OBJECTS o = SendingWay
-    PROPERTIES(o) READONLY name, mail
+    PROPERTIES (o) READONLY name, mail
     PROPERTIES (o) NEWSESSION NEW, EDIT, DELETE
     
     LIST SendingWay OBJECT o
 ;
 
-sendingWay = ABSTRACT SendingWay(Document);
-nameSendingWay 'Способ отправки документа' (Document d) = name(sendingWay(d));
+sendingWay = ABSTRACT SendingWay (Document);
+nameSendingWay 'Method of sending the document' (Document d) = name (sendingWay (d));
 
-sumCurrency 'Сумма в валюте' = ABSTRACT NUMERIC[16,5](Document);
-paidCurrency 'Оплачено в валюте' = ABSTRACT NUMERIC[16,5](Document);
-inCurrency 'В валюте' = ABSTRACT BOOLEAN (Document);
-currency = ABSTRACT Currency(Document);
-shortNameCurrency 'Валюта (сокр.)' (Document d) = shortName(currency(d));
+sumCurrency 'Amount in currency' = ABSTRACT NUMERIC [16,5] (Document);
+paidCurrency 'Paid in currency' = ABSTRACT NUMERIC [16,5] (Document);
+inCurrency 'In currency' = ABSTRACT BOOLEAN (Document);
+currency = ABSTRACT Currency (Document);
+shortNameCurrency 'Currency (abbreviated)' (Document d) = shortName (currency (d));
 
-backgroundCurrency (Document d) = RGB(232,232,255) IF inCurrency(d);
+backgroundCurrency (Document d) = RGB (232,232,255) IF inCurrency (d);
 
-FORM dialogDocuments 'Документы'
+FORM dialogDocuments 'Documents'
     OBJECTS d = Document
     PROPERTIES (d) READONLY date, nameDocType, number, name, nameCompany, nameCustomer, nameLegalEntity
-    ORDERS date(d)
+    ORDERS date (d)
     
     LIST Document OBJECT d
 ;
@@ -100,13 +100,13 @@ DESIGN dialogDocuments {
     size = (810, 600);
 }
 
-CLASS ABSTRACT Type 'Тип документа';
-TABLE type(Type);
+CLASS ABSTRACT Type 'Document type';
+TABLE type (Type);
 
-name 'Наименование' = ABSTRACT ISTRING[100](Type) CHARWIDTH 15;
+name 'Name' = ABSTRACT ISTRING [100] (Type) CHARWIDTH 15;
 
-docType = ABSTRACT DocType(Type);
-nameDocType 'Вид документа' (Type t) = name(docType(t));
+docType = ABSTRACT DocType (Type);
+nameDocType 'Document Type' (Type t) = name (docType (t));
 
-type = ABSTRACT Type(Document);
-nameType 'Тип документа' (Document d) = name(type(d));
+type = ABSTRACT Type (Document);
+nameType 'Document Type' (Document d) = name (type (d));
