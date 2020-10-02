@@ -5,72 +5,72 @@ REQUIRE Expense, CustomerAttachmentImport;
 NAMESPACE Expense;
 
 
-importExpense 'Импорт расходов' () {
+importExpense 'Import costs' () {
     
     NEWSESSION {
-        LOCAL idCompany = STRING[15] (INTEGER);
-        LOCAL idLegalEntity = STRING[15] (INTEGER);
+        LOCAL idCompany = STRING [15] (INTEGER);
+        LOCAL idLegalEntity = STRING [15] (INTEGER);
         LOCAL date = DATE (INTEGER);
         LOCAL dateP = DATE (INTEGER);
-        LOCAL type = STRING[15] (INTEGER);
-        LOCAL sum = NUMERIC[18,4](INTEGER);
-        LOCAL currency = STRING[15] (INTEGER);
+        LOCAL type = STRING [15] (INTEGER);
+        LOCAL sum = NUMERIC [18,4] (INTEGER);
+        LOCAL currency = STRING [15] (INTEGER);
         LOCAL note = TEXT (INTEGER);
-        LOCAL message = STRING[2000] ();
+        LOCAL message = STRING [2000] ();
         LOCAL count = INTEGER ();
         
         INPUT f = FILE DO {
             IMPORT XLS NOHEADER FROM f TO idCompany = B, idLegalEntity, date, dateP, type, sum, currency, note;
             
-            message() <- '';
-            count() <- 0;
+            message () <- '';
+            count () <- 0;
             
-            FOR imported(INTEGER i) AND i > 1 AND (NOT legalEntity(idLegalEntity(i)) OR NOT legalEntity(idCompany(i))) DO {
-                message() <- CONCAT ' ', message() + '\r\nстрока:', (i + 1), 
-                                    ('Код компании: ' + idCompany(i)) IF NOT legalEntity(idCompany(i)), 
-                                    ('Код организации: ' + idLegalEntity(i)) IF NOT legalEntity(idLegalEntity(i));
-                count() <- count() + 1;
+            FOR imported (INTEGER i) AND i> 1 AND (NOT legalEntity (idLegalEntity (i)) OR NOT legalEntity (idCompany (i))) DO {
+                message () <- CONCAT '', message () + '\ r \ nstring:', (i + 1),
+                                    ('Company code:' + idCompany (i)) IF NOT legalEntity (idCompany (i)),
+                                    ('Organization code:' + idLegalEntity (i)) IF NOT legalEntity (idLegalEntity (i));
+                count () <- count () + 1;
             }
             
-            IF count() > 0 THEN {
-                MESSAGE CONCAT ' ', 'Неимпортированные платежи, для которых не найдена организация или компания: ', count(), message();
+            IF count ()> 0 THEN {
+                MESSAGE CONCAT '', 'Unimported payments for which no organization or company was found:', count (), message ();
             }
     
-            FOR [GROUP MIN INTEGER i IF i > 1 BY trim(type(i))](STRING[15] name) AND name != ''
-                AND NOT [GROUP MAX ExpenseType t BY name(t)](name) DO NEW t = ExpenseType {
+            FOR [GROUP MIN INTEGER i IF i> 1 BY trim (type (i))] (STRING [15] name) AND name! = ''
+                AND NOT [GROUP MAX ExpenseType t BY name (t)] (name) DO NEW t = ExpenseType {
                 
-                name(t) <- name;
+                name (t) <- name;
             }
             
-            FOR legalEntity(idLegalEntity(INTEGER i)) AND legalEntity(idCompany(i)) DO NEW e = Expense {
+            FOR legalEntity (idLegalEntity (INTEGER i)) AND legalEntity (idCompany (i)) DO NEW e = Expense {
         
-                company(e) <- legalEntity(idCompany(i));
-                legalEntity(e) <- legalEntity(idLegalEntity(i));
-                date(e) <- date(i);
-                datePayment(e) <- dateP(i);
-                type(e) <- GROUP MAX ExpenseType t IF upper(name(t)) == upper(trim(type(i)));
-                sum(e) <- sum(i);
-                currency(e) <- currency(currency(i));
-                note(e) <- trim(note(i));
+                company (e) <- legalEntity (idCompany (i));
+                legalEntity (e) <- legalEntity (idLegalEntity (i));
+                date (e) <- date (i);
+                datePayment (e) <- dateP (i);
+                type (e) <- GROUP MAX ExpenseType t IF upper (name (t)) == upper (trim (type (i)));
+                sum (e) <- sum (i);
+                currency (e) <- currency (currency (i));
+                note (e) <- trim (note (i));
             }
         }
         APPLY;
     }
 }
 
-FORM exportExpenses 'Экспорт расходов'
+FORM exportExpenses 'Export Expenses'
     OBJECTS p = Expense
     PROPERTIES (p) idCompany, idLegalEntity, date, datePayment, nameType, sum, sidCurrency, note
-    ORDERS date(p)
+    ORDERS date (p)
 ;
 
-exportExpenses 'Экспорт расходов' () {
+exportExpenses 'Export expenses' () {
     
-    LOCAL file = FILE();
+    LOCAL file = FILE ();
     
     PRINT exportExpenses XLS TO file;
-    WRITE CLIENT DIALOG file() TO 'Расходы';
-    open(file(), 'Расходы');
+    WRITE CLIENT DIALOG file () TO 'Expenses';
+    open (file (), 'Costs');
 }
 
-EXTEND FORM migrationData PROPERTIES() exportExpenses, importExpense;
+EXTEND FORM migrationData PROPERTIES () exportExpenses, importExpense;
