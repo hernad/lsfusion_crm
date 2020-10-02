@@ -1,114 +1,114 @@
-Построена на базе платформы [lsFusion](https://github.com/lsfusion/platform).
+Built on the [lsFusion] platform (https://github.com/lsfusion/platform).
 
-# Возможности
+# Capabilities
 
-* Ведение клиентов, организаций, а также контактных лиц по ним.
-* Поддержка нескольких собственных компаний.
-* Работа с договорами, соглашениями и актами.
-* Возможность генерации документов на основе шаблонов (Word) и заготовок.
-* Ввод/импорт оплат клиентов и собственных платежей из бухгалтерского контура.
-* Контроль рабочего времени сотрудников. Поддержка отпусков, больничных, отгулов. Импорт из Redmine.
-* Поддержка разных валют.
-* Поддержка расходов по сотрудникам. Расчет прибыли по клиентам.
-* Регистрация событий по клиентам.
+* Keeping clients, organizations, as well as contact persons for them.
+* Support for multiple proprietary companies.
+* Work with contracts, agreements and acts.
+* Ability to generate documents based on templates (Word) and templates.
+* Input / import of customer payments and own payments from the accounting circuit.
+* Control of working hours of employees. Support for vacations, sick days, time off. Import from Redmine.
+* Support for different currencies.
+* Support for employee expenses. Calculation of profit for clients.
+* Registration of events by clients.
 
-# Демо
+# Demo
 
-Демо-версия с наполненной тестовой базой данных находится по адресу https://demo.lsfusion.org/crm.
+A demo with a complete test database can be found at https://demo.lsfusion.org/crm.
 
-В примере введены пользователи с разными ролями и доступными формами.
+The example introduces users with different roles and available forms.
 
-Доступные логины :
-* admin - Администратор (полный доступ ко всем функциям)
-* owner - Учредитель
-* manager - Менеджер
-* accountant - Бухгалтер
-* employee - Сотрудник
+Available logins:
+* admin - Administrator (full access to all functions)
+* owner - Founder
+* manager - Manager
+* accountant - Accountant
+* employee - Employee
 
-Пароли совпадают с логинами.
+Passwords match logins.
 
-Изменять роли и их права можно под администратором на форме Администрирование / Политика безопасности.
+You can change roles and their rights under the administrator on the Administration / Security policy form.
 
-Данные введены в основном за 2018 год. Во всех формах лучше всего выбирать соответствующий период.
+Data entered mainly for 2018. In all forms, it is best to choose the appropriate period.
 
-# Инсталляция
+# Installation
 
-* Устанавливаем lsFusion на сервер, как описано в следующей инструкции : https://documentation.lsfusion.org/pages/viewpage.action?pageId=57738078.
-* В папке /var/lib/lsfusion запускаем git pull.
-* В файле /etc/lsfusion2-server/lsfusion.conf добавляем в значение параметра CLASSPATH следующий путь - /var/lib/lsfusion/crm/src/main/resources (перед ним двоеточие).
-* Перезапускаем сервер lsFusion (как в первой инструкции).
+* Install lsFusion on the server as described in the following instructions: https://documentation.lsfusion.org/pages/viewpage.action?pageId=57738078.
+* In the / var / lib / lsfusion folder, run git pull.
+* In the file /etc/lsfusion2-server/lsfusion.conf add the following path to the value of the CLASSPATH parameter - / var / lib / lsfusion / crm / src / main / resources (preceded by a colon).
+* Restart the lsFusion server (as in the first instruction).
 
-# Краткое описание
+# Short description
 
-Основные рабочие формы расположены на вкладке Рабочий стол. Каждая из них предназначена для выполнения определенного процесса(ов).
+The main working forms are located on the Desktop tab. Each of them is designed to carry out a specific process (s).
 
-## Работа с клиентами
+## Working with clients
 
-Форма предназначена для удобного отображения и редактирования всей информации по одному клиенту. 
+The form is designed for easy display and editing of all information for one client.
 
-## Работа с договорами
+## Working with contracts
 
-Показывает список всех активных договоров с возможностью их редактирования и просмотром всей детальной информации, привязанной к договорам.
+Shows a list of all active contracts with the ability to edit them and view all the detailed information associated with contracts.
 
-## Работа с задолженностями
+## Dealing with debts
 
-### Контроль задолженности
+### Debt Control
 
-Отображает список задолженностей по всем договорам клиентов. Идет автоматический расчет суммы оплаты по каждой задолженности с учетом привязки к договорам/соглашения/актам по принципу FIFO. На форме можно выставить акт по одной или нескольким задолженностям в рамках одного договора.
+Displays a list of liabilities for all customer agreements. There is an automatic calculation of the amount of payment for each debt, taking into account the binding to contracts / agreements / acts according to the FIFO principle. On the form, you can put an act on one or several debts within the framework of one contract.
 
-### План платежей
+### Payment plan
 
-Показывает помесячно задолженности (будущие и текущие) в разрезе типов договоров, а также произведенные оплаты.
+Shows monthly debts (future and current) in the context of contract types, as well as payments made.
 
-## Итоги работы
+## Results of work
 
-### Прибыль по клиентам
+### Profit by customer
 
-Рассчитывает за выбранный интервал доходы, расходы и прибыль в валюте. Доходы рассчитываются как все платежи по курсу на дату оплаты. Расходы рассчитываются исходя из отмеченного времени сотрудников по клиентам исходя из сумм, заданных в форме Расходы по сотрудникам. Также отмеченное время по проектам без клиента (внутренним проектам) может "расписываться" на всех клиентов пропорционально доходам относительно групп договоров.
+Calculates income, expenses and profit in foreign currency for the selected interval. Income is calculated as all payments at the exchange rate on the date of payment. Expenses are calculated based on the marked time of employees by customers based on the amounts specified in the Expenses by employees form. Also, the marked time for projects without a client (internal projects) can be "signed" for all clients in proportion to income relative to groups of contracts.
 
-### Прибыль по месяцам
+### Profit by month
 
-Сводит в одну форму доход и расходы по месяцам в валюте. Подбиение итогов в разрезе типов и групп договоров.
+Consolidates income and expenses by month in currency in one form. Subtotal breakdown by types and groups of contracts.
 
-### Отчет менеджера
+### Manager report
 
-Выводит в Excel файл список всех платежей по клиентам, привязанных к определенному сотруднику с заданной ролью (например, к роли Менеджер).
+Outputs to Excel file a list of all payments for customers tied to a specific employee with a specified role (for example, the Manager role).
 
-## Работа с документами
+## Work with documents
 
-### Обработка платежей
+### Payment processing
 
-Используется для импорта из бухгалтерской системы платежей клиентов и исходящих платежей с последующей обработкой. Как правило, в процессе обработки идет привязка платежей к договорам, соглашениям и актам.
+It is used to import customer payments and outgoing payments from the accounting system with subsequent processing. As a rule, in the process of processing payments are linked to contracts, agreements and acts.
 
-### Обработка документов
+### Document processing
 
-Показывает список всех рабочих документов (договора, соглашения, акты) в системе в единой таблице. Предназначена для работы со входящей и исходящей корреспонденцией. В этой форме можно отмечать даты и способы отправки документов, закрывать обработанные.
+Shows a list of all working documents (contracts, agreements, acts) in the system in a single table. Designed to work with incoming and outgoing correspondence. In this form, you can mark the dates and methods of sending documents, close the processed ones.
 
-### Итоги по актам
+### Results by acts
 
-Отображает суммы выставленных актов по месяцам в разрезе организаций. Используется бухгалтерами для проверки корректности выставленных актов.
+Displays the amount of issued acts by month in the context of organizations. Used by accountants to check the correctness of the issued acts.
 
-## Рабочее время
+## Work time
 
-### Табель рабочего времени
+### Timesheet
 
-Предназначена для отметки сотрудниками времени, затраченного по конкретным клиентам, а также регистрации отпусков, больничных и прочих причин остуствия на рабочем месте. Если осуществляется автоматический импорт из внешней системы отметки времени (например, Redmine), то в форме отображаются также и импортированные отметки времени.
+Designed for employees to mark the time spent on specific clients, as well as to register vacations, sick leave and other reasons for being in the workplace. If you are automatically importing from an external timestamp system (eg Redmine), then the imported timestamps are also displayed on the form.
 
-### Контроль отмеченного времени
+### Control of marked time
 
-Показывает в виде таблицы отмеченное время и отсутствие каждого сотрудника за определенный месяц. Необходима для контроля менеджером правильности заполнения табеля рабочего времени сотрудниками.
+Shows in the form of a table the marked time and absence of each employee for a certain month. It is necessary for the manager to control the correctness of filling out the timesheet by employees.
 
-### Выставление счетов
+### Billing
 
-В этой форме можно формировать по каждому клиенту Excel файл за заданный интервал со списком всех трудозатрат. Также присутствует возможность привязывать задачи к конкретным договорам и соглашениям.
+In this form, you can generate an Excel file for each client for a specified interval with a list of all labor costs. It is also possible to link tasks to specific contracts and agreements.
 
-## Прочее
+## Other
 
-### Обработка событий
+### Event handling
 
-На этой форме пользователи могут регистрировать события (звонки, переговоры, презентации и т.д.) связанные с определенными клиентами. Также в ней можно отслеживать время необходимости следующего контакта с клиентом, если это было помечено ранее, через отбор Последние по клиенту.
+On this form, users can register events (calls, negotiations, presentations, etc.) related to certain clients. It also allows you to track the time of the need for the next contact with the client, if it was marked earlier, through the selection of the Last by client.
 
-### Мои задачи
+### My tasks
 
-Предназначена для создания задач другим сотрудниками и изменению назначенных текущему пользователю задач. Показываются только задачи не импортированные из внешних систем (например, Redmine)
+It is intended for creating tasks by other employees and changing the tasks assigned to the current user. Only tasks not imported from external systems are shown (for example, Redmine)
 
