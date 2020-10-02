@@ -4,57 +4,57 @@ REQUIRE Payment, Contract;
 
 NAMESPACE Payment;
 
-contract = DATA Contract(Payment);
-idContract 'Код договора' (Payment a) = id(contract(a));
-numberContract 'Номер договора' (Payment a) = number(contract(a)) IN id;
-nameContract 'Наименование договора' (Payment a) = name(contract(a)) IN id;
-dateContract 'Дата договора' (Payment a) = date(contract(a));
-typeContract (Payment p) = type(contract(p));
-nameTypeContract 'Тип договора' (Payment p) = nameType(contract(p));
-nameGroupContract 'Группа договора' (Payment p) = nameGroup(contract(p));
+contract = DATA Contract (Payment);
+idContract 'Contract code' (Payment a) = id (contract (a));
+numberContract 'Contract number' (Payment a) = number (contract (a)) IN id;
+nameContract 'Name of the contract' (Payment a) = name (contract (a)) IN id;
+dateContract 'Contract date' (Payment a) = date (contract (a));
+typeContract (Payment p) = type (contract (p));
+nameTypeContract 'Type of contract' (Payment p) = nameType (contract (p));
+nameGroupContract 'Contract Group' (Payment p) = nameGroup (contract (p));
 
-CONSTRAINT contract(Payment p) AND legalEntity(p) AND NOT legalEntity(p) = legalEntity(contract(p)) CHECKED BY contract[Payment] MESSAGE 'Организация платежа должна совпадать с организацией договора';
-CONSTRAINT contract(Payment p) AND company(p) AND NOT company(p) = company(contract(p)) CHECKED BY contract[Payment] MESSAGE 'Компания платежа должна совпадать с компанией договора';
+CONSTRAINT contract (Payment p) AND legalEntity (p) AND NOT legalEntity (p) = legalEntity (contract (p)) CHECKED BY contract [Payment] MESSAGE 'The payment organization must be the same as the contract organization';
+CONSTRAINT contract (Payment p) AND company (p) AND NOT company (p) = company (contract (p)) CHECKED BY contract [Payment] MESSAGE 'The payment company must be the same as the contract company';
 
-paid 'Оплачено' (Contract c) = GROUP SUM sum(Payment p) BY contract(p);
-paidCurrency 'Оплачено в валюте' (Contract c) = GROUP SUM sumCurrency(Payment p) BY contract(p);
-dateLastPaid 'Дата последней оплаты' (Contract c) = GROUP LAST date(Payment p) ORDER date(p), p BY contract(p);
-paid 'Оплачено' (Contract c, DATE dt) = GROUP SUM sum(Payment p) IF date(p) <= dt BY contract(p);
+paid 'Paid' (Contract c) = GROUP SUM sum (Payment p) BY contract (p);
+paidCurrency 'Paid in currency' (Contract c) = GROUP SUM sumCurrency (Payment p) BY contract (p);
+dateLastPaid 'Date of the last payment' (Contract c) = GROUP LAST date (Payment p) ORDER date (p), p BY contract (p);
+paid 'Paid' (Contract c, DATE dt) = GROUP SUM sum (Payment p) IF date (p) <= dt BY contract (p);
 
-paid(Contract c) += paid(c);
-paidCurrency(Contract c) += NUMERIC[16,5](paidCurrency(c));
-dateLastPaid(Contract c) += dateLastPaid(c);
+paid (Contract c) + = paid (c);
+paidCurrency (Contract c) + = NUMERIC [16,5] (paidCurrency (c));
+dateLastPaid (Contract c) + = dateLastPaid (c);
 
 EXTEND FORM payment PROPERTIES (o) numberContract;
 
 DESIGN payment {
     docs {
-        MOVE PROPERTY (numberContract(o));
+        MOVE PROPERTY (numberContract (o));
     }
 }
 
-EXTEND FORM payments 
+EXTEND FORM payments
     PROPERTIES (o) READONLY numberContract, nameTypeContract, nameGroupContract
-    ORDERS numberContract(o)
+    ORDERS numberContract (o)
 ;
-EXTEND FORM dialogPayments 
+EXTEND FORM dialogPayments
     PROPERTIES (o) READONLY numberContract, nameTypeContract, nameGroupContract
-    ORDERS numberContract(o)
+    ORDERS numberContract (o)
 ;
 
-EXTEND FORM dialogContracts 
-    PROPERTIES (o) paidCurrency AFTER sumCurrency(o), paid AFTER sum(o)
-    PROPERTIES (o) dateLastPaid AFTER paid(o);
+EXTEND FORM dialogContracts
+     PROPERTIES (o) paidCurrency AFTER sumCurrency (o), paid AFTER sum (o)
+     PROPERTIES (o) dateLastPaid AFTER paid (o);
 
 EXTEND FORM contract
-    OBJECTS p = Payment
-    PROPERTIES (p) READONLY id, number, date, year, monthNumber, nameType, sum, shortNameCurrency, sumCurrency, note
-    ORDERS date(p)
-    FILTERS contract(p) == o
+     OBJECTS p = Payment
+     PROPERTIES (p) READONLY id, number, date, year, monthNumber, nameType, sum, shortNameCurrency, sumCurrency, note
+     ORDERS date (p)
+     FILTERS contract (p) == o
 ;
 
 DESIGN contract {
-    details {
-        MOVE BOX (p) { caption = 'Платежи'; }
-    }
+     details {
+         MOVE BOX (p) {caption = 'Payments'; }
+     }
 }
