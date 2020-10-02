@@ -4,80 +4,79 @@ REQUIRE Employee, WorkingHours;
 
 NAMESPACE Employee;
 
-CLASS Absence 'Отсутствие';
+CLASS Absence 'Absence';
 TABLE absence (Absence);
 
-id 'Код' = DATA STRING[15] (Absence) INDEXED CHARWIDTH 5 IN id;
+id 'Code' = DATA STRING [15] (Absence) INDEXED CHARWIDTH 5 IN id;
 absence (id) = GROUP AGGR Absence c BY id (c);
 
 employee = DATA Employee (Absence);
-idEmployee 'Код сотрудника' (Absence a) = id(employee(a));
-nameEmployee 'Сотрудник' (Absence a) = name(employee(a));
+idEmployee 'Employee ID' (Absence a) = id (employee (a));
+nameEmployee 'Employee' (Absence a) = name (employee (a));
 
-CLASS AbsenceReason 'Причина отсутствия';
+CLASS AbsenceReason 'Absence reason';
 TABLE absenceReason (AbsenceReason);
 
-name 'Наименование' = DATA ISTRING[100] (AbsenceReason) CHARWIDTH 15;
-inactive 'Неактивный' = DATA BOOLEAN (AbsenceReason);
+name 'Name' = DATA ISTRING [100] (AbsenceReason) CHARWIDTH 15;
+inactive 'Inactive' = DATA BOOLEAN (AbsenceReason);
 
-FORM absenceReason 'Причина отсутствия'
+FORM absenceReason 'Absence reason'
     OBJECTS o = AbsenceReason PANEL
-    PROPERTIES(o) name, inactive
+    PROPERTIES (o) name, inactive
     
     EDIT AbsenceReason OBJECT o
 ;
 
-FORM absenceReasons 'Причины отсутствия'
+FORM absenceReasons 'Reasons for absence'
     OBJECTS o = AbsenceReason
-    PROPERTIES(o) READONLY name, inactive
-    FILTERGROUP active FILTER 'Активные' NOT inactive(o) DEFAULT 
-    PROPERTIES(o) NEWSESSION NEW, EDIT, DELETE
+    PROPERTIES (o) READONLY name, inactive
+    FILTERGROUP active FILTER 'Active' NOT inactive (o) DEFAULT
+    PROPERTIES (o) NEWSESSION NEW, EDIT, DELETE
 ;
 
-FORM dialogAbsenceReasons 'Причины отсутствия'
+FORM dialogAbsenceReasons 'Reasons for absence'
     OBJECTS o = AbsenceReason
-    PROPERTIES(o) READONLY name, inactive
-    FILTERGROUP active FILTER 'Активные' NOT inactive(o) DEFAULT 
+    PROPERTIES (o) READONLY name, inactive
+    FILTERGROUP active FILTER 'Active' NOT inactive (o) DEFAULT
     
     LIST AbsenceReason OBJECT o
 ;
 
-reason = DATA AbsenceReason(Absence) NONULL;
-nameReason 'Причина отсутствия' (Absence a) = name(reason(a));
+reason = DATA AbsenceReason (Absence) NONULL;
+nameReason 'Absence reason' (Absence a) = name (reason (a));
 
-dateFrom 'Дата с' = DATA DATE (Absence);
-dateTo 'Дата по' = DATA DATE (Absence);
-hours 'Кол-во часов' = DATA NUMERIC[7,2](Absence);
-date 'Дата ввода' = DATA DATE (Absence);
-note 'Примечание' = DATA ISTRING[100] (Absence) CHARWIDTH 30;
+dateFrom 'Date from' = DATA DATE (Absence);
+dateTo 'Date by' = DATA DATE (Absence);
+hours 'Number of hours' = DATA NUMERIC [7,2] (Absence);
+date 'Date entered' = DATA DATE (Absence);
+note 'Note' = DATA ISTRING [100] (Absence) CHARWIDTH 30;
 
-CONSTRAINT dateTo(Absence a) < dateFrom(a) MESSAGE 'Дата по должна быть не раньше даты с';
+CONSTRAINT dateTo (Absence a) <dateFrom (a) MESSAGE 'Date to must not be earlier than date from';
 
-@addRoleApplicationSetting(editDays, 'Дней для редактирования отсутствия', INTEGER);
+@addRoleApplicationSetting (editDays, 'Days to edit absence', INTEGER);
 
-isEditable (Absence a) = NOT dateFrom(a) < sum(currentDate(), -editDays(mainRole(currentUser()))) AND NOT dateTo(a) < sum(currentDate(), -editDays(mainRole(currentUser())));
+isEditable (Absence a) = NOT dateFrom (a) <sum (currentDate (), -editDays (mainRole (currentUser ()))) AND NOT dateTo (a) <sum (currentDate (), -editDays (mainRole (currentUser () )));
 
-CONSTRAINT (CHANGED(dateFrom(Absence a)) OR CHANGED(dateTo(a))) AND NOT isEditable(a) MESSAGE 'Дата отсутствия не попадает в период редактирования';
+CONSTRAINT (CHANGED (dateFrom (Absence a)) OR CHANGED (dateTo (a))) AND NOT isEditable (a) MESSAGE 'The absence date does not fall within the editing period';
 
-workingHours 'Рабочих часов за интервал' (Absence a) = GROUP SUM workingHours(DATE d) IF iterate(d, dateFrom(a), dateTo(a));
+workingHours 'Working hours per interval' (Absence a) = GROUP SUM workingHours (DATE d) IF iterate (d, dateFrom (a), dateTo (a));
 
-hours 'Часы' (Absence a, DATE d) = PARTITION UNGROUP hours
-                                                             LIMIT STRICT workingHours(d) IF d >= dateFrom(a) AND d <= dateTo(a)
+hours 'Hours' (Absence a, DATE d) = PARTITION UNGROUP hours
+                                                             LIMIT STRICT workingHours (d) IF d> = dateFrom (a) AND d <= dateTo (a)
                                                              ORDER d
-                                                             BY a; 
-                                                      
+                                                             BY a;
+                                                             
+absenceHours 'Hours' (Employee e, DATE d) = GROUP SUM hours (Absence a, d) BY employee (a) CHARWIDTH 2;
 
-absenceHours 'Часы' (Employee e, DATE d) = GROUP SUM hours(Absence a, d) BY employee(a) CHARWIDTH 2;
+employee (Absence a) <- currentUser () WHEN SET (a IS Absence);
+date (Absence a) <- currentDate () WHEN SET (a IS Absence);
+dateFrom (Absence a) <- currentDate () WHEN SET (a IS Absence);
+dateTo (Absence a) <- currentDate () WHEN SET (a IS Absence);
+hours (Absence a) <- workingHours (currentDate (), currentUser ()) WHEN SET (a IS Absence);
 
-employee(Absence a) <- currentUser() WHEN SET(a IS Absence);
-date(Absence a) <- currentDate() WHEN SET(a IS Absence);
-dateFrom(Absence a) <- currentDate() WHEN SET(a IS Absence);
-dateTo(Absence a) <- currentDate() WHEN SET(a IS Absence);
-hours(Absence a) <- workingHours(currentDate(), currentUser()) WHEN SET (a IS Absence);
-
-FORM absence 'Отсутствие сотрудников'
+FORM absence 'Absence of employees'
     OBJECTS o = Absence PANEL
-    PROPERTIES(o) id, nameEmployee, nameReason, dateFrom, dateTo, hours, date, note
+    PROPERTIES (o) id, nameEmployee, nameReason, dateFrom, dateTo, hours, date, note
 
     EDIT Absence OBJECT o
 ;
@@ -86,60 +85,60 @@ DESIGN absence {
     OBJECTS {
         NEW data FIRST {
             NEW firstData {
-                caption = 'Основные параметры';
+                caption = 'Main parameters';
                 type = CONTAINERH;
-                MOVE PROPERTY (id(o));
-                MOVE PROPERTY (date(o));
+                MOVE PROPERTY (id (o));
+                MOVE PROPERTY (date (o));
             }
             NEW secondData {
                 type = CONTAINERH;
-                caption = 'Время отсутствия';
-                MOVE PROPERTY (dateFrom(o));
-                MOVE PROPERTY (dateTo(o));
-                MOVE PROPERTY (hours(o));
+                caption = 'Time away';
+                MOVE PROPERTY (dateFrom (o));
+                MOVE PROPERTY (dateTo (o));
+                MOVE PROPERTY (hours (o));
             }
         }
         NEW employee {
-            caption = 'Сотрудник';
+            caption = 'Employee';
             alignment = STRETCH;
-            MOVE PROPERTY (nameEmployee(o));
+            MOVE PROPERTY (nameEmployee (o));
         }
         NEW contact {
-            caption = 'Описание';
+            caption = 'Description';
             alignment = STRETCH;
-            MOVE PROPERTY (nameReason(o));
-            MOVE PROPERTY (note(o));
+            MOVE PROPERTY (nameReason (o));
+            MOVE PROPERTY (note (o));
         }
     }
 }
 
-WHEN LOCAL FORMS absence CHANGED (dateFrom(Absence a)) OR CHANGED (dateTo(a)) DO {
-    hours(a) <- GROUP SUM workingHours(DATE d, currentUser()) IF d >= dateFrom(a) AND d <= dateTo(a);
+WHEN LOCAL FORMS absence CHANGED (dateFrom (Absence a)) OR CHANGED (dateTo (a)) DO {
+    hours (a) <- GROUP SUM workingHours (DATE d, currentUser ()) IF d> = dateFrom (a) AND d <= dateTo (a);
 }
 
-FORM absences 'Отсутствие сотрудников'
-    OBJECTS o = Absence LAST 
-    PROPERTIES(o) READONLY id, nameEmployee, nameReason, dateFrom, dateTo, hours, workingHours, date, note
-    PROPERTIES(o) NEWSESSION NEW, EDIT SHOWIF isEditable(o), DELETE SHOWIF isEditable(o)
-    ORDERS date(o)
+FORM absences 'Absence of employees'
+    OBJECTS o = Absence LAST
+    PROPERTIES (o) READONLY id, nameEmployee, nameReason, dateFrom, dateTo, hours, workingHours, date, note
+    PROPERTIES (o) NEWSESSION NEW, EDIT SHOWIF isEditable (o), DELETE SHOWIF isEditable (o)
+    ORDERS date (o)
 
     OBJECTS d = DATE
-    PROPERTIES READONLY VALUE(d), extractDOWName(d), hours(o, d)
-    FILTERS hours(o, d)
+    PROPERTIES READONLY VALUE (d), extractDOWName (d), hours (o, d)
+    FILTERS hours (o, d)
 ;
 
 DESIGN absences {
     OBJECTS {
         type = SPLITH;
-        BOX (o) { fill = 4; }
-        BOX (d) { fill = 1; }
+        BOX (o) {fill = 4; }
+        BOX (d) {fill = 1; }
     }
 }
 
-FORM dialogAbsences 'Отсутствие сотрудников'
-    OBJECTS o = Absence LAST 
-    PROPERTIES(o) READONLY id, nameEmployee, nameReason, dateFrom, dateTo, hours, workingHours, date, note
-    ORDERS date(o)
+FORM dialogAbsences 'Absence of employees'
+    OBJECTS o = Absence LAST
+    PROPERTIES (o) READONLY id, nameEmployee, nameReason, dateFrom, dateTo, hours, workingHours, date, note
+    ORDERS date (o)
     
     LIST Absence OBJECT o
 ;
