@@ -4,75 +4,75 @@ REQUIRE Employee;
 
 NAMESPACE Event;
 
-CLASS Event 'Событие';
+CLASS Event 'Event';
 TABLE event (Event);
 
-id 'Код' = DATA STRING[15] (Event) INDEXED CHARWIDTH 5 IN id;
+id 'Code' = DATA STRING [15] (Event) INDEXED CHARWIDTH 5 IN id;
 event (id) = GROUP AGGR Event c BY id (c);
 
-name 'Наименование' = DATA ISTRING[100] (Event) CHARWIDTH 15;
-date 'Дата ввода' = DATA DATE (Event);
-time 'Время ввода' = DATA TIME (Event);
-dateNext 'Дата следующего' = DATA DATE (Event);
-description 'Содержание' = DATA TEXT (Event);
-descriptionString 'Содержание' (Event e) = ISTRING[1000](description(e)) CHARWIDTH 30;
-addition 'Дополнение' = DATA TEXT (Event);
-additionString 'Дополнение' (Event e) = ISTRING[1000](addition(e)) CHARWIDTH 30;
+name 'Name' = DATA ISTRING [100] (Event) CHARWIDTH 15;
+date 'Date entered' = DATA DATE (Event);
+time 'Input time' = DATA TIME (Event);
+dateNext 'Date of next' = DATA DATE (Event);
+description 'Content' = DATA TEXT (Event);
+descriptionString 'Content' (Event e) = ISTRING [1000] (description (e)) CHARWIDTH 30;
+addition 'Addition' = DATA TEXT (Event);
+additionString 'Addition' (Event e) = ISTRING [1000] (addition (e)) CHARWIDTH 30;
 
-customer = DATA Customer(Event);
-idCustomer 'Код клиента' (Event e) = id(customer(e));
-nameCustomer 'Клиент' (Event e) = name(customer(e)) IN id;
+customer = DATA Customer (Event);
+idCustomer 'Customer code' (Event e) = id (customer (e));
+nameCustomer 'Customer' (Event e) = name (customer (e)) IN id;
 
-merge (Customer from, Customer to) + { customer(Event e) <- to WHERE customer(e) = from; }
+merge (Customer from, Customer to) + {customer (Event e) <- to WHERE customer (e) = from; }
 
-legalEntity = DATA LegalEntity(Event);
-idLegalEntity 'Код организации' (Event e) = id(legalEntity(e));
-nameLegalEntity 'Организация' (Event e) = name(legalEntity(e)) IN id;
+legalEntity = DATA LegalEntity (Event);
+idLegalEntity 'Organization code' (Event e) = id (legalEntity (e));
+nameLegalEntity 'Organization' (Event e) = name (legalEntity (e)) IN id;
 
-WHEN LOCAL SETCHANGED(customer(legalEntity(Event e))) DO
-    customer(e) <- customer(legalEntity(e));
-CONSTRAINT customer(Event e) AND legalEntity(e) AND NOT customer(e) = customer(legalEntity(e)) CHECKED BY legalEntity[Event] MESSAGE 'Клиент не совпадает с организацией';
+WHEN LOCAL SETCHANGED (customer (legalEntity (Event e))) DO
+    customer (e) <- customer (legalEntity (e));
+CONSTRAINT customer (Event e) AND legalEntity (e) AND NOT customer (e) = customer (legalEntity (e)) CHECKED BY legalEntity [Event] MESSAGE 'The customer is not the same as the organization';
 
-employee = DATA Employee(Event);
-idEmployee 'Код сотрудника' (Event e) = id(employee(e));
-nameEmployee 'Сотрудник' (Event e) = name(employee(e));
+employee = DATA Employee (Event);
+idEmployee 'Employee ID' (Event e) = id (employee (e));
+nameEmployee 'Employee' (Event e) = name (employee (e));
 
-contact = DATA Contact.Contact(Event);
-idContact 'Код контактного лица' (Event e) = id(contact(e));
-nameContact 'Контактное лицо' (Event e) = name(contact(e)) IN id;
-phoneContact 'Телефон контактного лица' (Event e) = OVERRIDE phone(contact(e)), (GROUP LAST number(Phone p) ORDER DESC p IF contact(p) == contact(e)) CHARWIDTH 15;
-namePositionContact 'Должность контактного лица' (Event e) = name(position(contact(e)));
+contact = DATA Contact.Contact (Event);
+idContact 'Contact person code' (Event e) = id (contact (e));
+nameContact 'Contact person' (Event e) = name (contact (e)) IN id;
+phoneContact 'Contact phone number' (Event e) = OVERRIDE phone (contact (e)), (GROUP LAST number (Phone p) ORDER DESC p IF contact (p) == contact (e)) CHARWIDTH 15;
+namePositionContact 'Position of the contact person' (Event e) = name (position (contact (e)));
 
-CONSTRAINT customer(Event e) AND contact(e) AND NOT customer(contact(e)) == customer(e) CHECKED BY contact[Event] MESSAGE 'Клиент контакта не совпадает с клиентом';
-CONSTRAINT legalEntity(Event e) AND contact(e) AND NOT legalEntity(contact(e)) == legalEntity(e) CHECKED BY contact[Event] MESSAGE 'Организация контакта не совпадает с организацией';
+CONSTRAINT customer (Event e) AND contact (e) AND NOT customer (contact (e)) == customer (e) CHECKED BY contact [Event] MESSAGE 'The customer of the contact is not the same as the customer';
+CONSTRAINT legalEntity (Event e) AND contact (e) AND NOT legalEntity (contact (e)) == legalEntity (e) CHECKED BY contact [Event] MESSAGE 'The organization of the contact is not the same as the organization';
 
-CLASS EventType 'Тип события';
+CLASS EventType 'Event type';
 TABLE eventType (EventType);
 
-name 'Наименование' = DATA ISTRING[100] (EventType) CHARWIDTH 15;
+name 'Name' = DATA ISTRING [100] (EventType) CHARWIDTH 15;
 
-FORM eventType 'Тип события'
+FORM eventType 'Event type'
     OBJECTS o = EventType PANEL
-    PROPERTIES(o) name
+    PROPERTIES (o) name
     
     EDIT EventType OBJECT o
 ;
 
-FORM eventTypes 'Тип события'
+FORM eventTypes 'Event Type'
     OBJECTS o = EventType
-    PROPERTIES(o) READONLY name
-    PROPERTIES(o) NEWSESSION NEW, EDIT, DELETE
-    ORDERS name(o)
+    PROPERTIES (o) READONLY name
+    PROPERTIES (o) NEWSESSION NEW, EDIT, DELETE
+    ORDERS name (o)
     
     LIST EventType OBJECT o
 ;
 
-type = DATA EventType(Event);
-nameType 'Тип события' (Event e) = name(type(e));
+type = DATA EventType (Event);
+nameType 'Event type' (Event e) = name (type (e));
 
-FORM event 'Событие'
+FORM event 'Event'
     OBJECTS o = Event PANEL
-    PROPERTIES(o)  id, name, nameType, nameCustomer, nameLegalEntity, nameEmployee, nameContact, date, time, dateNext, description, addition
+    PROPERTIES (o) id, name, nameType, nameCustomer, nameLegalEntity, nameEmployee, nameContact, date, time, dateNext, description, addition
     
     EDIT Event OBJECT o
 ;
@@ -80,76 +80,76 @@ FORM event 'Событие'
 DESIGN event {
     OBJECTS {
         NEW data FIRST {
-            caption = 'Основные параметры';
+            caption = 'Main parameters';
             type = CONTAINERH;
-            MOVE PROPERTY (id(o));
-            MOVE PROPERTY (date(o));
-            MOVE PROPERTY (time(o));
-            MOVE PROPERTY (dateNext(o));
-            MOVE PROPERTY (name(o)) { charWidth = 30; }
-            MOVE PROPERTY (nameType(o));
+            MOVE PROPERTY (id (o));
+            MOVE PROPERTY (date (o));
+            MOVE PROPERTY (time (o));
+            MOVE PROPERTY (dateNext (o));
+            MOVE PROPERTY (name (o)) {charWidth = 30; }
+            MOVE PROPERTY (nameType (o));
         }
         NEW contact {
-            caption = 'Контакты';
+            caption = 'Contacts';
             alignment = STRETCH;
-            MOVE PROPERTY (nameCustomer(o));
-            MOVE PROPERTY (nameLegalEntity(o));
-            MOVE PROPERTY (nameContact(o));
+            MOVE PROPERTY (nameCustomer (o));
+            MOVE PROPERTY (nameLegalEntity (o));
+            MOVE PROPERTY (nameContact (o));
         }
         NEW docs {
-            caption = 'Документы';
+            caption = 'Documents';
             type = CONTAINERH;
         }
         NEW employee {
-            caption = 'Сотрудник';
+            caption = 'Employee';
             alignment = STRETCH;
-            MOVE PROPERTY (nameEmployee(o));
+            MOVE PROPERTY (nameEmployee (o));
         }
         NEW bottom {
             type = CONTAINERH;
             fill = 1;
             NEW description {
                 fill = 1;
-                caption = 'Содержание';
-                MOVE PROPERTY (description(o)) { caption = ''; fill = 1; }
+                caption = 'Content';
+                MOVE PROPERTY (description (o)) {caption = ''; fill = 1; }
             }
             NEW addition {
                 fill = 1;
-                caption = 'Дополнение';
-                MOVE PROPERTY (addition(o)) { caption = ''; fill = 1; }
+                caption = 'Caption';
+                MOVE PROPERTY (addition (o)) {caption = ''; fill = 1; }
             }
         }
     }
 }
 
 DESIGN event {
-    GROUP (,o) {
+    GROUP (, o) {
         type = CONTAINERV;
         fill = 1;
-        PROPERTY (description(o)) { valueHeight = 100; }
-        PROPERTY (addition(o)) { valueHeight = 100; }
+        PROPERTY (description (o)) {valueHeight = 100; }
+        PROPERTY (addition (o)) {valueHeight = 100; }
     }
 }
 
-employee(e) <- currentUser() WHEN SET(e IS Event);
-date(e) <- currentDate() WHEN SET(e IS Event);
-time(e) <- currentTime() WHEN SET(e IS Event);
+employee (e) <- currentUser () WHEN SET (e IS Event);
+date (e) <- currentDate () WHEN SET (e IS Event);
+time (e) <- currentTime () WHEN SET (e IS Event);
 
-//WHEN LOCAL FORMS event SETCHANGED (customer(Event e)) AND NOT CHANGED (legalEntity(e)) AND [GROUP SUM 1 BY customer(LegalEntity l)](customer(e)) == 1 DO {
-//    legalEntity(e) <- GROUP MAX LegalEntity l IF customer(l) == customer(e);
+// WHEN LOCAL FORMS event SETCHANGED (customer (Event e)) AND NOT CHANGED (legalEntity (e)) AND [GROUP SUM 1 BY customer (LegalEntity l)] (customer (e)) == 1 DO {
+// legalEntity (e) <- GROUP MAX LegalEntity l IF customer (l) == customer (e);
 //}
 
-FORM events 'События'
-    OBJECTS o = Event LAST 
-    PROPERTIES(o) READONLY id, name, nameType, nameCustomer, nameLegalEntity, nameEmployee, nameContact, date, time, dateNext, descriptionString, additionString
-    PROPERTIES(o) NEWSESSION NEW, EDIT, DELETE
-    ORDERS date(o), time(o)
+FORM events 'Events'
+    OBJECTS o = Event LAST
+    PROPERTIES (o) READONLY id, name, nameType, nameCustomer, nameLegalEntity, nameEmployee, nameContact, date, time, dateNext, descriptionString, additionString
+    PROPERTIES (o) NEWSESSION NEW, EDIT, DELETE
+    ORDERS date (o), time (o)
 ;
 
-FORM dialogEvents 'События'
-    OBJECTS o = Event LAST 
-    PROPERTIES(o) READONLY id, name, nameType, nameCustomer, nameLegalEntity, nameEmployee, nameContact, date, time, dateNext, descriptionString, additionString
-    ORDERS date(o), time(o)
+FORM dialogEvents 'Events'
+    OBJECTS o = Event LAST
+    PROPERTIES (o) READONLY id, name, nameType, nameCustomer, nameLegalEntity, nameEmployee, nameContact, date, time, dateNext, descriptionString, additionString
+    ORDERS date (o), time (o)
     
     LIST Event OBJECT o
 ;
