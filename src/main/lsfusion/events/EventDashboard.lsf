@@ -4,50 +4,50 @@ REQUIRE Event, Dashboard, DocEvent, DocIssue;
 
 NAMESPACE Event;
 
-lastEvent (Customer c, Employee ee) = GROUP LAST Event e ORDER date(e), time(e), e BY customer(e), employee(e);
-lastEvent (Customer c) = GROUP LAST Event e ORDER date(e), time(e), e BY customer(e);
-isLastCustomerEmployee (Event e) = e = lastEvent(customer(e), employee(e));
-isLastCustomer (Event e) = e = lastEvent(customer(e));
+lastEvent (Customer c, Employee ee) = GROUP LAST Event e ORDER date (e), time (e), e BY customer (e), employee (e);
+lastEvent (Customer c) = GROUP LAST Event e ORDER date (e), time (e), e BY customer (e);
+isLastCustomerEmployee (Event e) = e = lastEvent (customer (e), employee (e));
+isLastCustomer (Event e) = e = lastEvent (customer (e));
 
-dateFromEvent 'с' = DATA LOCAL DATE ();
-dateToEvent 'по' = DATA LOCAL DATE ();
-dateFromNext 'с' = DATA LOCAL DATE ();
-dateToNext 'по' = DATA LOCAL DATE ();
+dateFromEvent 'c' = DATA LOCAL DATE ();
+dateToEvent 'by' = DATA LOCAL DATE ();
+dateFromNext 'c' = DATA LOCAL DATE ();
+dateToNext 'by' = DATA LOCAL DATE ();
 
-showCustomerDashboard 'Работа с клиентом' (Event d) { show(customer(d)); }
+showCustomerDashboard 'Customer Service' (Event d) {show (customer (d)); }
 
-FORM eventDashboard 'Обработка событий'
+FORM eventDashboard 'Event Handling'
     PROPERTIES () dateFromEvent, dateToEvent, dateFromNext, dateToNext
     
-    OBJECTS o = Event 
-    PROPERTIES(o) READONLY id, name, nameType, nameCustomer, nameLegalEntity, nameEmployee, nameContact, phoneContact, 
+    OBJECTS o = Event
+    PROPERTIES (o) READONLY id, name, nameType, nameCustomer, nameLegalEntity, nameEmployee, nameContact, phoneContact,
                            namePositionContact, date, time, dateNext, descriptionString, additionString, nameDocument
-    PROPERTIES(o) PANEL READONLY description, addition
-    PROPERTIES DRAW o TOOLBAR showCustomerDashboard(o) SHOWIF customer(o)
-    PROPERTIES(o) NEWSESSION NEW, EDIT, DELETE
-    ORDERS date(o) DESC, time(o) DESC
-    FILTERS NOT date(o) < dateFromEvent() AND NOT date(o) > dateToEvent() AND NOT dateNext(o) < dateFromNext() AND NOT dateNext(o) > dateToNext()
-    FILTERGROUP last FILTER 'Последние по клиенту (мои)' isLastCustomerEmployee(o) AND employee(o) = currentUser() AND dateNext(o) >= subtract(currentDate(), 360) 
-                     FILTER 'Последние по клиенту' isLastCustomer(o) AND dateNext(o) >= subtract(currentDate(), 360)
+    PROPERTIES (o) PANEL READONLY description, addition
+    PROPERTIES DRAW o TOOLBAR showCustomerDashboard (o) SHOWIF customer (o)
+    PROPERTIES (o) NEWSESSION NEW, EDIT, DELETE
+    ORDERS date (o) DESC, time (o) DESC
+    FILTERS NOT date (o) <dateFromEvent () AND NOT date (o)> dateToEvent () AND NOT dateNext (o) <dateFromNext () AND NOT dateNext (o)> dateToNext ()
+    FILTERGROUP last FILTER 'Last by customer (mine)' isLastCustomerEmployee (o) AND employee (o) = currentUser () AND dateNext (o)> = subtract (currentDate (), 360)
+                     FILTER 'Latest by customer' isLastCustomer (o) AND dateNext (o)> = subtract (currentDate (), 360)
 ;
 
 dashboardFilter = DATA LOCAL BOOLEAN (Event);
 
-FORM eventsXls 'События'
+FORM eventsXls 'Events'
     
     PROPERTIES () dateFromEvent, dateToEvent, dateFromNext, dateToNext
     
-    OBJECTS o = Event 
+    OBJECTS o = Event
     PROPERTIES (o) nameCustomer, nameContact, description
-    FILTERS dashboardFilter(o)
+    FILTERS dashboardFilter (o)
 ;
 
-printEventsXls 'Выгрузить в Excel' () {
-    dashboardFilter(Event e) <- [FILTER eventDashboard.o](e);
+printEventsXls 'Export to Excel' () {
+    dashboardFilter (Event e) <- [FILTER eventDashboard.o] (e);
     PRINT eventsXls XLS;
 }
 
-EXTEND FORM eventDashboard PROPERTIES printEventsXls();
+EXTEND FORM eventDashboard PROPERTIES printEventsXls ();
 
 DESIGN eventDashboard {
     OBJECTS {
@@ -55,34 +55,34 @@ DESIGN eventDashboard {
             type = CONTAINERH;
             NEW dates1 {
                 type = CONTAINERH;
-                caption = 'Даты события';
-                MOVE PROPERTY (dateFromEvent());
-                MOVE PROPERTY (dateToEvent());
+                caption = 'Event Dates';
+                MOVE PROPERTY (dateFromEvent ());
+                MOVE PROPERTY (dateToEvent ());
             }
             NEW dates2 {
                 type = CONTAINERH;
-                caption = 'Даты следующих переговоров';
-                MOVE PROPERTY (dateFromNext());
-                MOVE PROPERTY (dateToNext());
+                caption = 'Dates of next negotiations';
+                MOVE PROPERTY (dateFromNext ());
+                MOVE PROPERTY (dateToNext ());
             }
-            MOVE PROPERTY (printEventsXls()) { fill = 1; }
+            MOVE PROPERTY (printEventsXls ()) {fill = 1; }
         }
         BOX (o) {
             fill = 5;
         }
         type = CONTAINERV;
-        NEW bottom AFTER BOX (o){
+        NEW bottom AFTER BOX (o) {
             type = CONTAINERH;
             fill = 1;
             NEW description {
                 fill = 1;
-                caption = 'Содержание';
-                MOVE PROPERTY (description(o)) { caption = ''; fill = 1; }
+                caption = 'Content';
+                MOVE PROPERTY (description (o)) {caption = ''; fill = 1; }
             }
             NEW addition {
                 fill = 1;
-                caption = 'Дополнение';
-                MOVE PROPERTY (addition(o)) { caption = ''; fill = 1; }
+                caption = 'Caption';
+                MOVE PROPERTY (addition (o)) {caption = ''; fill = 1; }
             }
         }
     }
@@ -96,16 +96,17 @@ NAVIGATOR {
 
 event = DATA Event (Issue);
 
-createIssue 'Создать задачу' (Event e) {
+createIssue 'Create task' (Event e) {
     NEWSESSION NEW i = Issue {
-        event(i) <- e;
-        name(i) <- name(e);
-        description(i) <- CONCAT '\n', description(e), addition(e);
-        customer(i) <- customer(e);
-        document(i) <- document(e);
-        assignedTo(i) <- employee(e);
+        event (i) <- e;
+        name (i) <- name (e);
+        description (i) <- CONCAT '\ n', description (e), addition (e);
+        customer (i) <- customer (e);
+        document (i) <- document (e);
+        assignedTo (i) <- employee (e);
         SHOW issue OBJECTS o = i DOCKED;
     }
 }
 
-EXTEND FORM eventDashboard PROPERTIES createIssue(o) BEFORE showCustomerDashboard(o) TOOLBAR;
+EXTEND FORM eventDashboard PROPERTIES createIssue (o) BEFORE showCustomerDashboard (o) TOOLBAR;
+
