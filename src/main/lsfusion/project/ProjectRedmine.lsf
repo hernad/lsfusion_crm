@@ -4,55 +4,55 @@ REQUIRE ProjectExternal, IssueRedmine, TimeEntryRedmine;
 
 NAMESPACE Project;
 
-importProject 'Импорт проектов' (External e) {
+importProject 'Import projects' (External e) {
     NEWSESSION {
         LOCAL id = INTEGER (INTEGER);
-        LOCAL name = STRING[100](INTEGER);
-        LOCAL identifier = STRING[100](INTEGER);
+        LOCAL name = STRING [100] (INTEGER);
+        LOCAL identifier = STRING [100] (INTEGER);
         LOCAL active = BOOLEAN (INTEGER);
             
         LOCAL file = FILE ();
-        EXTERNAL SQL path(e) EXEC 'SELECT id, name, identifier, (status = 1) AS active FROM projects' TO file;
+        EXTERNAL SQL path (e) EXEC 'SELECT id, name, identifier, (status = 1) AS active FROM projects' TO file;
         
-        IMPORT TABLE FROM file() TO id, name, identifier, active;
+        IMPORT TABLE FROM file () TO id, name, identifier, active;
         
-        FOR [GROUP MIN INTEGER i BY STRING[15](id(i))](STRING[15] id) AND id != '' AND NOT project(id, e) DO NEW p = Project {
-            id(p) <- id;
-            external(p) <- e;
+        FOR [GROUP MIN INTEGER i BY STRING [15] (id (i))] (STRING [15] id) AND id! = '' AND NOT project (id, e) DO NEW p = Project {
+            id (p) <- id;
+            external (p) <- e;
         }
         
-        FOR Project p = project(STRING[15](id(INTEGER i)), e) AND id(i) DO {
-            name(p) <- name(i);
-            identifier(p) <- identifier(i);
-            inactive(p) <- NOT active(i);
+        FOR Project p = project (STRING [15] (id (INTEGER i)), e) AND id (i) DO {
+            name (p) <- name (i);
+            identifier (p) <- identifier (i);
+            inactive (p) <- NOT active (i);
         }
         
-        FOR external(Project p) == e AND NOT [GROUP SUM 1 IF imported(INTEGER i) BY STRING[15](id(i))](id(p)) DO {
+        FOR external (Project p) == e AND NOT [GROUP SUM 1 IF imported (INTEGER i) BY STRING [15] (id (i))] (id (p)) DO {
             DELETE p;
         }
         APPLY;
     }
 }
 
-external = DATA External();
-nameExternal 'Внешняя система' () = name(external());
+external = DATA External ();
+nameExternal 'External system' () = name (external ());
 
-importExternal 'Импорт' () {
-    importProject(external());
-    importTracker(external());
-    importIssueStatus(external());
-    importActivity(external());
-    importIssue(external());
-    importTimeEntry(external());
+importExternal 'Import' () {
+    importProject (external ());
+    importTracker (external ());
+    importIssueStatus (external ());
+    importActivity (external ());
+    importIssue (external ());
+    importTimeEntry (external ());
 }
 
-EXTEND FORM migrationData PROPERTIES nameExternal(), importExternal();
+EXTEND FORM migrationData PROPERTIES nameExternal (), importExternal ();
 
 DESIGN migrationData {
     NEW importProjectExternal FIRST {
-        caption = 'Импорт проектов';
+        caption = 'Import projects';
         type = CONTAINERH;
-        MOVE PROPERTY (nameExternal());
-        MOVE PROPERTY (importExternal());
+        MOVE PROPERTY (nameExternal ());
+        MOVE PROPERTY (importExternal ());
     }
 }
