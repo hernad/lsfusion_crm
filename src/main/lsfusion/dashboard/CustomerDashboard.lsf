@@ -1,206 +1,206 @@
 MODULE CustomerDashboard;
 
-REQUIRE Project, PaymentAct, Event, Issue, TimeEntry, Dashboard, LegalEntity, DocFile, TimeEntryCustomer, ProjectExternal, 
+REQUIRE Project, PaymentAct, Event, Issue, TimeEntry, Dashboard, LegalEntity, DocFile, TimeEntryCustomer, ProjectExternal,
         DebtAgreement, CustomerAttachment, AgreementIssue, ContractIssue, CustomerTag, CustomerRole;
 
 NAMESPACE Dashboard;
 
-addEvent 'Добавить' (Customer c) {
+addEvent 'Add' (Customer c) {
     NEWSESSION NEW e = Event {
-        customer(e) <- c;
+        customer (e) <- c;
         SHOW event OBJECTS o = e DOCKED;
     }
-} IMAGE 'add.png'  CHANGEKEY 'INSERT' HIDE;
+} IMAGE 'add.png' CHANGEKEY 'INSERT' HIDE;
 
-addContact 'Добавить' (Customer c) {
+addContact 'Add' (Customer c) {
     NEWSESSION NEW e = Contact.Contact {
-        customer(e) <- c;
+        customer (e) <- c;
         SHOW contact OBJECTS o = e DOCKED;
     }
-} IMAGE 'add.png'  CHANGEKEY 'INSERT' HIDE;
+} IMAGE 'add.png' CHANGEKEY 'INSERT' HIDE;
 
-addLegalEntity 'Добавить' (Customer c) {
+addLegalEntity 'Add' (Customer c) {
     NEWSESSION NEW e = LegalEntity {
-        customer(e) <- c;
+        customer (e) <- c;
         SHOW legalEntity OBJECTS o = e DOCKED;
     }
-} IMAGE 'add.png'  CHANGEKEY 'INSERT' HIDE;
+} IMAGE 'add.png' CHANGEKEY 'INSERT' HIDE;
 
-filterLegalEntity = DATA LOCAL LegalEntity(Customer);
-nameFilterLegalEntity 'Организация' (Customer c) = name(filterLegalEntity(c));
+filterLegalEntity = DATA LOCAL LegalEntity (Customer);
+nameFilterLegalEntity 'Organization' (Customer c) = name (filterLegalEntity (c));
 
-CONSTRAINT filterLegalEntity(Customer c) AND NOT customer(filterLegalEntity(c)) == c CHECKED BY filterLegalEntity[Customer] MESSAGE 'Клиент организации не соответствует клиенту';
+CONSTRAINT filterLegalEntity (Customer c) AND NOT customer (filterLegalEntity (c)) == c CHECKED BY filterLegalEntity [Customer] MESSAGE 'The organization's customer does not match the customer';
 
-addIssue 'Добавить' (Customer c) {
+addIssue 'Add' (Customer c) {
     NEWSESSION NEW i = Issue {
-        customer(i) <- c;
+        customer (i) <- c;
         SHOW issue OBJECTS o = i DOCKED;
     }
-} IMAGE 'add.png'  CHANGEKEY 'INSERT' HIDE;
+} IMAGE 'add.png' CHANGEKEY 'INSERT' HIDE;
 
-in 'Отм.' = DATA LOCAL BOOLEAN (Contact.Contact);
+in 'Mark.' = DATA LOCAL BOOLEAN (Contact.Contact);
 
-sendEmailToContacts 'Написать письмо' (Contact.Contact c) {
-    IF NOT (GROUP SUM 1 IF in(Contact.Contact cc)) THEN {
-        in(c) <- TRUE;
+sendEmailToContacts 'Send email' (Contact.Contact c) {
+    IF NOT (GROUP SUM 1 IF in (Contact.Contact cc)) THEN {
+        in (c) <- TRUE;
     }
-    open(LINK('mailto:' + (GROUP CONCAT email(Contact.Contact cc) IF in(cc), ',')));
-    in(Contact.Contact cc) <- NULL;
+    open (LINK ('mailto:' + (GROUP CONCAT email (Contact.Contact cc) IF in (cc), ',')));
+    in (Contact.Contact cc) <- NULL;
 }
 
-FORM dashboardCustomer 'Работа с клиентами'
+FORM dashboardCustomer 'Customer Service'
     
-    OBJECTS c = Customer PANEL 
+    OBJECTS c = Customer PANEL
     PROPERTIES (c) name SELECTOR, info
-    PROPERTIES (c) NEWSESSION NEW, EDIT 
+    PROPERTIES (c) NEWSESSION NEW, EDIT
     
     OBJECTS le = LegalEntity
     PROPERTIES (le) READONLY id, name, fullName, nameLegalAddress, numberBank, nameBank, addressBank, mfoBank, isCompany
-    PROPERTIES addLegalEntity(c) DRAW le TOOLBAR
-    PROPERTIES (le) NEWSESSION EDIT, DELETE 
-    FILTERS customer(le) == c
-    ORDERS name(le)
+    PROPERTIES addLegalEntity (c) DRAW le TOOLBAR
+    PROPERTIES (le) NEWSESSION EDIT, DELETE
+    FILTERS customer (le) == c
+    ORDERS name (le)
     
     OBJECTS ct = Contact.Contact
     PROPERTIES (ct) in
     PROPERTIES (ct) READONLY id, firstName, middleName, lastName, nameLegalEntity, namePosition, email, phone, addPhones, skype, note
-    PROPERTIES DRAW ct TOOLBAR sendEmailToContacts(ct), addContact(c)
-    PROPERTIES (ct) NEWSESSION EDIT, DELETE 
-    FILTERS customer(ct) == c
-    ORDERS lastName(ct)
+    PROPERTIES DRAW ct TOOLBAR sendEmailToContacts (ct), addContact (c)
+    PROPERTIES (ct) NEWSESSION EDIT, DELETE
+    FILTERS customer (ct) == c
+    ORDERS lastName (ct)
     
     OBJECTS cr = Contract
     PROPERTIES (cr) READONLY id, nameLegalEntity, nameCompany, number, date, name, sum, paid, nameType, nameSendingWay, dateSigningCompany, dateSending, dateSigningCustomer, dateReceiving, dateTo, dateClosing, note, textString
-    PROPERTIES (cr) BACKGROUND backgroundCurrency(cr) sumCurrency, paidCurrency
-    PROPERTIES (cr) NEWSESSION EDIT 
-    FILTERS customer(legalEntity(cr)) == c OR customer(company(cr)) == c
-    ORDERS date(cr) DESC
+    PROPERTIES (cr) BACKGROUND backgroundCurrency (cr) sumCurrency, paidCurrency
+    PROPERTIES (cr) NEWSESSION EDIT
+    FILTERS customer (legalEntity (cr)) == c OR customer (company (cr)) == c
+    ORDERS date (cr) DESC
     
     FILTERGROUP activeContract
-        FILTER 'Активные' NOT dateClosing(cr) <= currentDate() DEFAULT
+        FILTER 'Active' NOT dateClosing (cr) <= currentDate () DEFAULT
     
     OBJECTS ag = Agreement
     PROPERTIES (ag) READONLY id, number, date, name, nameType, sum, nameSendingWay, dateSending, dateReceiving, dateClosing, note, textString
-    PROPERTIES (ag) NEWSESSION EDIT 
-    FILTERS contract(ag) == cr
-    ORDERS date(ag) DESC
+    PROPERTIES (ag) NEWSESSION EDIT
+    FILTERS contract (ag) == cr
+    ORDERS date (ag) DESC
     
     OBJECTS ac = Act
     PROPERTIES (ac) READONLY id, numberAgreement, number, date, fromDate, toDate, name, paid, nameType, sum, nameSendingWay, dateSending, dateReceiving, dateClosing, note, textString
-    PROPERTIES (ac) NEWSESSION EDIT 
-    FILTERS contract(ac) == cr
-    ORDERS date(ac) DESC
+    PROPERTIES (ac) NEWSESSION EDIT
+    FILTERS contract (ac) == cr
+    ORDERS date (ac) DESC
 
     OBJECTS ppm = Payment
-    PROPERTIES (ppm) READONLY id, numberAct, number, date, year, monthNumber, nameType, sum, nameCurrency, shortNameCurrency, sumCurrency, note 
-    FILTERS contract(ppm) == cr
-    ORDERS date(ppm) DESC
+    PROPERTIES (ppm) READONLY id, numberAct, number, date, year, monthNumber, nameType, sum, nameCurrency, shortNameCurrency, sumCurrency, note
+    FILTERS contract (ppm) == cr
+    ORDERS date (ppm) DESC
     
-    PROPERTIES nameFilterLegalEntity(c)
+    PROPERTIES nameFilterLegalEntity (c)
     
-    OBJECTS pm = Payment
-    PROPERTIES (pm) READONLY id, nameLegalEntity, numberContract, nameContract, nameTypeContract, numberAgreement, nameAgreement, 
-                             numberAct, number, date, year, monthNumber, sum, nameCurrency, shortNameCurrency, sumCurrency, note 
-    FILTERS customer(legalEntity(pm)) == c, legalEntity(pm) == filterLegalEntity(c) OR NOT filterLegalEntity(c)
-    ORDERS date(pm) DESC
+OBJECTS pm = Payment
+    PROPERTIES (pm) READONLY id, nameLegalEntity, numberContract, nameContract, nameTypeContract, numberAgreement, nameAgreement,
+                             numberAct, number, date, year, monthNumber, sum, nameCurrency, shortNameCurrency, sumCurrency, note
+    FILTERS customer (legalEntity (pm)) == c, legalEntity (pm) == filterLegalEntity (c) OR NOT filterLegalEntity (c)
+    ORDERS date (pm) DESC
     
     OBJECTS ev = Event
-    PROPERTIES (ev) READONLY id, name, nameType, nameLegalEntity, nameEmployee, nameContact, date, time, dateNext, descriptionString, description PANEL, addition PANEL 
-    PROPERTIES addEvent(c) DRAW ev TOOLBAR 
-    PROPERTIES (ev) NEWSESSION EDIT, DELETE 
-    FILTERS customer(ev) == c
-    ORDERS date(ev) DESC
+    PROPERTIES (ev) READONLY id, name, nameType, nameLegalEntity, nameEmployee, nameContact, date, time, dateNext, descriptionString, description PANEL, addition PANEL
+    PROPERTIES addEvent (c) DRAW ev TOOLBAR
+    PROPERTIES (ev) NEWSESSION EDIT, DELETE
+    FILTERS customer (ev) == c
+    ORDERS date (ev) DESC
     
     OBJECTS pr = Project
     PROPERTIES (pr) READONLY id, name, identifier
-    FILTERS customer(pr) == c
-    FILTERGROUP active FILTER 'Активные' active(pr) DEFAULT 
-    ORDERS name(pr) DESC
+    FILTERS customer (pr) == c
+    FILTERGROUP active FILTER 'Active' active (pr) DEFAULT
+    ORDERS name (pr) DESC
     
     OBJECTS st = IssueStatus
     PROPERTIES (st) READONLY name
-    PROPERTIES READONLY countActive(c, st)
-    FILTERS countActive(c, st)
+    PROPERTIES READONLY countActive (c, st)
+    FILTERS countActive (c, st)
     
     OBJECTS is = Issue
-    PROPERTIES(is) in
-    PROPERTIES(is) READONLY number, name, descriptionString, dateTo, dateTimeCreated, dateTimeUpdated, dateFrom, doneRatio, 
+    PROPERTIES (is) in
+    PROPERTIES (is) READONLY number, name, descriptionString, dateTo, dateTimeCreated, dateTimeUpdated, dateFrom, doneRatio,
                             estimatedHours, hours, nameProject, nameAuthor, nameAssignedTo, nameTracker, numberAgreement, nameAgreement, numberContract, nameContract
-    PROPERTIES DRAW is TOOLBAR changeStatus(is), open(is)
-    FILTERS customer(is) == c, status(is) == st, NOT inactive(project(is))
-    ORDERS number(is) DESC
+    PROPERTIES DRAW is TOOLBAR changeStatus (is), open (is)
+    FILTERS customer (is) == c, status (is) == st, NOT inactive (project (is))
+    ORDERS number (is) DESC
     
     OBJECTS te = TimeEntry
     PROPERTIES (te) READONLY id, hours, commentsString, date, nameActivity, nameProject, nameEmployee, numberIssue, nameIssue
-    FILTERS customer(te) == c
-    ORDERS date(te) DESC
+    FILTERS customer (te) == c
+    ORDERS date (te) DESC
     
     OBJECTS ss = Issue
-    PROPERTIES(ss) in
-    PROPERTIES(ss) READONLY number, name, descriptionString, dateTo, dateTimeCreated, dateTimeUpdated, dateFrom, doneRatio, 
+    PROPERTIES (ss) in
+    PROPERTIES (ss) READONLY number, name, descriptionString, dateTo, dateTimeCreated, dateTimeUpdated, dateFrom, doneRatio,
                             estimatedHours, nameProject, nameAuthor, nameAssignedTo, nameTracker, numberAgreement, nameAgreement
-    PROPERTIES DRAW ss TOOLBAR open(ss), addIssue(c)
-    PROPERTIES (ss) SHOWIF NOT external(ss) NEWSESSION EDIT, DELETE 
-    FILTERS customer(ss) == c OR customer(project(ss)) == c
-    FILTERGROUP open FILTER 'Открытые' NOT isClosed(status(ss)) DEFAULT 
-    FILTERGROUP inner FILTER 'Внутренние' NOT external(ss) DEFAULT 
-    ORDERS number(ss) DESC
+    PROPERTIES DRAW ss TOOLBAR open (ss), addIssue (c)
+    PROPERTIES (ss) SHOWIF NOT external (ss) NEWSESSION EDIT, DELETE
+    FILTERS customer (ss) == c OR customer (project (ss)) == c
+    FILTERGROUP open FILTER 'Open' NOT isClosed (status (ss)) DEFAULT
+    FILTERGROUP inner FILTER 'Internal' NOT external (ss) DEFAULT
+    ORDERS number (ss) DESC
     
     OBJECTS at = Attachment
     PROPERTIES (at) READONLY id, nameCustomer, number, date, nameType, note, nameCreatedUser, createdDate
-    PROPERTIES DRAW at TOOLBAR openFile(at), addAttachment(c)
-    PROPERTIES(at) NEWSESSION EDIT, DELETE
-    ORDERS date(at) DESC 
-    FILTERS customer(at) == c 
+    PROPERTIES DRAW at TOOLBAR openFile (at), addAttachment (c)
+    PROPERTIES (at) NEWSESSION EDIT, DELETE
+    ORDERS date (at) DESC
+    FILTERS customer (at) == c
     
     OBJECTS d = Debt
     PROPERTIES (d) READONLY date, numberContract, nameContractType, nameLegalEntity, shortNameCurrency, sumCurrency, sum, paid, note, numberAgreement
-    FILTERS customer(d) = c
+    FILTERS customer (d) = c
     
     OBJECTS e = Employee
-    PROPERTIES READONLY name(e), roles(c, e)
-    FILTERS in(c, e)
-    ORDERS name(e)
-;
+    PROPERTIES READONLY name (e), roles (c, e)
+    FILTERS in (c, e)
+    ORDERS name (e)
+; 
 
 DESIGN dashboardCustomer {
     OBJECTS {
         TOOLBARRIGHT (c) {
             type = CONTAINERH;
             alignment = STRETCH;
-            MOVE PROPERTY (name(c)) FIRST;
+            MOVE PROPERTY (name (c)) FIRST;
         }
         NEW tabPane AFTER BOX (c) {
             type = TABBED;
             fill = 1;
-            MOVE BOX (le) { caption = 'Организации'; }
-            MOVE BOX (ct) { caption = 'Контакты'; }
+            MOVE BOX (le) {caption = 'Organizations'; }
+            MOVE BOX (ct) {caption = 'Contacts'; }
             NEW contracts {
-                caption = 'Договоры';
+                caption = 'Contracts';
                 type = SPLITV;
-                MOVE BOX (cr) { caption = 'Договоры'; }
+                MOVE BOX (cr) {caption = 'Contracts'; }
                 NEW contractDetails {
                     fill = 1;
                     type = TABBED;
                     NEW additionalContractDocuments {
-                        caption = 'Документы';
+                        caption = 'Documents';
                         type = SPLITH;
-                        MOVE BOX (ag) { caption = 'Соглашения'; }
-                        MOVE BOX (ac) { caption = 'Акты'; }
+                        MOVE BOX (ag) {caption = 'Agreements'; }
+                        MOVE BOX (ac) {caption = 'Acts'; }
                     }
-                    MOVE BOX(ppm) {
-                        caption = 'Платежи';
+                    MOVE BOX (ppm) {
+                        caption = 'Payments';
                     }
                 }
             }
             NEW payments {
-                caption = 'Платежи';
-                MOVE PROPERTY (nameFilterLegalEntity(c));
-                MOVE BOX (pm) { caption = 'Платежи'; }
+                caption = 'Payments';
+                MOVE PROPERTY (nameFilterLegalEntity (c));
+                MOVE BOX (pm) {caption = 'Payments'; }
             }
-            MOVE BOX (d) { caption = 'Задолженности'; }
+            MOVE BOX (d) {caption = 'Debts'; }
             NEW events {
-                caption = 'События';
+                caption = 'Events';
                 fill = 1;
                 MOVE BOX (ev);
                 NEW add {
@@ -208,45 +208,45 @@ DESIGN dashboardCustomer {
                     fill = 1;
                     NEW description {
                         fill = 1;
-                        caption = 'Содержание';
-                        MOVE PROPERTY (description(ev)) { caption = ''; fill = 1; }
+                        caption = 'Content';
+                        MOVE PROPERTY (description (ev)) {caption = ''; fill = 1; }
                     }
                     NEW addition {
                         fill = 1;
-                        caption = 'Дополнение';
-                        MOVE PROPERTY (addition(ev)) { caption = ''; fill = 1; }
+                        caption = 'Caption';
+                        MOVE PROPERTY (addition (ev)) {caption = ''; fill = 1; }
                     }
                 }
             }
             NEW projects {
-                caption = 'Проекты';
+                caption = 'Projects';
                 fill = 1;
                 NEW projectsTab {
                     type = TABBED;
                     fill = 1;
-                    MOVE BOX (pr) { caption = 'Проекты'; }
+                    MOVE BOX (pr) {caption = 'Projects'; }
                     NEW issues {
-                        caption = 'Задачи';
+                        caption = 'Tasks';
                         type = SPLITH;
                         MOVE BOX (st) {
                             fill = 1;
-                        }  
-                        MOVE BOX (is) { 
-                            caption = 'Задачи'; 
+                        }
+                        MOVE BOX (is) {
+                            caption = 'Tasks';
                             fill = 6;
                         }
                     }
-                    MOVE BOX (te) { caption = 'Отметки времени'; }
+                    MOVE BOX (te) {caption = 'Timestamps'; }
                 }
             }
-            MOVE BOX (ss) { caption = 'Задачи'; }
-            MOVE BOX (at) { caption = 'Документы'; }
+            MOVE BOX (ss) {caption = 'Tasks'; }
+            MOVE BOX (at) {caption = 'Documents'; }
             NEW info {
-                caption = 'Информация';
+                caption = 'Information';
                 fill = 1;
-                MOVE PROPERTY (info(c)) { caption = ''; fill = 1; }
+                MOVE PROPERTY (info (c)) {caption = ''; fill = 1; }
             }
-            MOVE BOX (e) { caption = 'Сотрудники'; }
+            MOVE BOX (e) {caption = 'Employees'; }
         }
     }
 }
@@ -257,69 +257,69 @@ NAVIGATOR {
     }
 }
 
-addLegalEntityCustomer 'Добавить' (Customer c) {
+addLegalEntityCustomer 'Add' (Customer c) {
     NESTEDSESSION NEW l = LegalEntity {
-        customer(l) <- c;
-        IF [GROUP SUM 1 BY customer(LegalEntity e)](c) == 1 THEN FOR customer(Address a) == c DO {
-            legalEntity(a) <- l;
+        customer (l) <- c;
+        IF [GROUP SUM 1 BY customer (LegalEntity e)] (c) == 1 THEN FOR customer (Address a) == c DO {
+            legalEntity (a) <- l;
         }
         SHOW legalEntity OBJECTS o = l DOCKED;
     }
-} IMAGE 'add.png'  CHANGEKEY 'INSERT' HIDE;
+} IMAGE 'add.png' CHANGEKEY 'INSERT' HIDE;
 
 EXTEND FORM customer
     OBJECTS le = LegalEntity
-    PROPERTIES (le) id, extId, name, fullName, nameLegalAddress, numberBank, nameBank, addressBank, mfoBank, isCompany 
-    PROPERTIES DRAW le TOOLBAR addLegalEntityCustomer(o), EDIT(le), DELETE(le)
-    FILTERS customer(le) = o
+    PROPERTIES (le) id, extId, name, fullName, nameLegalAddress, numberBank, nameBank, addressBank, mfoBank, isCompany
+    PROPERTIES DRAW le TOOLBAR addLegalEntityCustomer (o), EDIT (le), DELETE (le)
+    FILTERS customer (le) = o
     
     OBJECTS c = Contact.Contact
     PROPERTIES (c) id, firstName, lastName, login, nameLegalEntity, namePosition, email, phone, addPhones, skype, note, NEW, EDIT, DELETE
-    FILTERS customer(c) = o
+    FILTERS customer (c) = o
 ;
 DESIGN customer {
     OBJECTS {
         NEW main FIRST {
             type = CONTAINERH;
-            caption = 'Основные параметры';
-            MOVE PROPERTY (id(o));
-            MOVE PROPERTY (name(o)) { charWidth = 50; }
+            caption = 'Main parameters';
+            MOVE PROPERTY (id (o));
+            MOVE PROPERTY (name (o)) {charWidth = 50; }
         }
         NEW contacts AFTER main {
             type = CONTAINERH;
-            caption = 'Контакты';
-            MOVE PROPERTY (phone(o));
-            MOVE PROPERTY (email(o)) { charWidth = 30; }
+            caption = 'Contacts';
+            MOVE PROPERTY (phone (o));
+            MOVE PROPERTY (email (o)) {charWidth = 30; }
         }
         NEW add AFTER contacts {
-            caption = 'Дополнительные параметры';
+            caption = 'Additional options';
             NEW firstAdd {
                 type = COLUMNS;
                 columns = 3;
-                MOVE PROPERTY (nameGroup(o));
-                MOVE PROPERTY (nameStatus(o));
-                MOVE PROPERTY (dateFrom(o));
-                MOVE PROPERTY (site(o));
-                MOVE PROPERTY (note(o));
+                MOVE PROPERTY (nameGroup (o));
+                MOVE PROPERTY (nameStatus (o));
+                MOVE PROPERTY (dateFrom (o));
+                MOVE PROPERTY (site (o));
+                MOVE PROPERTY (note (o));
             }
             NEW secondAdd {
                 type = CONTAINERH;
-                MOVE PROPERTY (inactive(o));
-                MOVE PROPERTY (forbidTimeEntries(o));
+                MOVE PROPERTY (inactive (o));
+                MOVE PROPERTY (forbidTimeEntries (o));
             }
         }
         NEW tab {
             type = TABBED;
             fill = 1;
-            MOVE BOX (le) { caption = 'Организации'; }
-            MOVE BOX (a) { caption = 'Адреса'; }
-            MOVE BOX (c) { caption = 'Контакты'; }
-            MOVE BOX (t) { caption = 'Тэги'; }
-            MOVE BOX (e) { caption = 'Сотрудники'; }
+            MOVE BOX (le) {caption = 'Organizations'; }
+            MOVE BOX (a) {caption = 'Addresses'; }
+            MOVE BOX (c) {caption = 'Contacts'; }
+            MOVE BOX (t) {caption = 'Tags'; }
+            MOVE BOX (e) {caption = 'Employees'; }
             NEW info {
-                caption = 'Информация';
+                caption = 'Information';
                 fill = 1;
-                MOVE PROPERTY (info(o)) { caption = ''; fill = 1; }
+                MOVE PROPERTY (info (o)) {caption = ''; fill = 1; }
             }
         }
     }
@@ -331,6 +331,6 @@ NAVIGATOR {
     }
 }
 
-show(Customer c) + {
+show (Customer c) + {
     NEWSESSION SHOW dashboardCustomer OBJECTS c = c DOCKED NOWAIT;
 }
