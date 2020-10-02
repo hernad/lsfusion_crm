@@ -4,35 +4,35 @@ REQUIRE TimeEntry, TimeEntryTotalDashboard;
 
 NAMESPACE Project;
 
-CLASS TimeEntryDefault 'Отметки времени по умолчанию';
-TABLE timeEntryDefault(TimeEntryDefault);
+CLASS TimeEntryDefault 'Default timestamps';
+TABLE timeEntryDefault (TimeEntryDefault);
 
-date 'Дата' = DATA DATE (TimeEntryDefault) NONULL;
+date 'Date' = DATA DATE (TimeEntryDefault) NONULL;
 
-employee = DATA Employee(TimeEntryDefault);
-nameEmployee 'Сотрудник' (TimeEntryDefault d) = name(employee(d));
+employee = DATA Employee (TimeEntryDefault);
+nameEmployee 'Employee' (TimeEntryDefault d) = name (employee (d));
 
-timePercent 'Процент времени' = DATA NUMERIC[6,2](TimeEntryDefault, Project);
-timePercent 'Процент времени' (TimeEntryDefault t) = GROUP SUM timePercent(t, Project p);
+timePercent 'Percentage of time' = DATA NUMERIC [6,2] (TimeEntryDefault, Project);
+timePercent 'Time Percentage' (TimeEntryDefault t) = GROUP SUM timePercent (t, Project p);
 
-CONSTRAINT timePercent(TimeEntryDefault t) AND NOT timePercent(t) == 100.0 MESSAGE 'Сумма процентов отметки времени по умолчанию не равна 100%';
+CONSTRAINT timePercent (TimeEntryDefault t) AND NOT timePercent (t) == 100.0 MESSAGE 'The default sum of timestamp percentages is not 100%';
 
-percents 'Проценты времени по проектам' (TimeEntryDefault t) = GROUP CONCAT name(Project p) + ':' + round0(timePercent(t, p)) + '%', ', ' ORDER DESC timePercent(t, p) CHARWIDTH 50;
+percents 'Percentage of time by projects' (TimeEntryDefault t) = GROUP CONCAT name (Project p) + ':' + round0 (timePercent (t, p)) + '%', ',' ORDER DESC timePercent (t, p) CHARWIDTH 50;
 
-timeEntryDefault (Employee e, DATE d) = GROUP LAST TimeEntryDefault t ORDER date(t), t IF date(t) <= d BY employee(t);
-timePercent 'Процент времени' (Employee e, Project p, DATE d) = timePercent(timeEntryDefault(e, d), p);
+timeEntryDefault (Employee e, DATE d) = GROUP LAST TimeEntryDefault t ORDER date (t), t IF date (t) <= d BY employee (t);
+timePercent 'Time Percentage' (Employee e, Project p, DATE d) = timePercent (timeEntryDefault (e, d), p);
 
-FORM timePercent 'Процент времени'
-    OBJECTS t = TimeEntryDefault PANEL 
+FORM timePercent 'Percentage of time'
+    OBJECTS t = TimeEntryDefault PANEL
     OBJECTS p = Project
-    PROPERTIES READONLY id(p), 'Проект' = name(p), nameCustomer(p)
-    PROPERTIES timePercent(t, p)
-    ORDERS name(p)
+    PROPERTIES READONLY id (p), 'Project' = name (p), nameCustomer (p)
+    PROPERTIES timePercent (t, p)
+    ORDERS name (p)
     
-    PROPERTIES sum 'Сумма, %' = GROUP SUM timePercent(t, Project pp)
+    PROPERTIES sum 'Sum,%' = GROUP SUM timePercent (t, Project pp)
     
-    FILTERGROUP active FILTER 'Активные' NOT inactive(p) DEFAULT 
-    FILTERGROUP in FILTER 'Выбранные' timePercent(t, p)
+    FILTERGROUP active FILTER 'Active' NOT inactive (p) DEFAULT
+    FILTERGROUP in FILTER 'Selected' timePercent (t, p)
 ;
 
 DESIGN timePercent {
@@ -41,71 +41,71 @@ DESIGN timePercent {
     }
 }
 
-FORM timeEntryDefault 'Отметки времени по умолчанию'
+FORM timeEntryDefault 'Default timestamps'
     OBJECTS e = Employee
     PROPERTIES (e) READONLY name
-    ORDERS name(e)
+    ORDERS name (e)
     
     OBJECTS t = TimeEntryDefault
-    PROPERTIES (t) date, percents ON CHANGE { SHOW timePercent OBJECTS t = t; }, NEW, DELETE
-    ORDERS date(t)
-    FILTERS employee(t) == e
+    PROPERTIES (t) date, percents ON CHANGE {SHOW timePercent OBJECTS t = t; }, NEW, DELETE
+    ORDERS date (t)
+    FILTERS employee (t) == e
 ;
 
-default 'Авто' = DATA BOOLEAN (TimeEntry);
+default 'Auto' = DATA BOOLEAN (TimeEntry);
 
-emptyHours (Employee e, DATE d) = workingHours(d) (-) totalHours(e, d);
+emptyHours (Employee e, DATE d) = workingHours (d) (-) totalHours (e, d);
 
-createTimeEntries 'Заполнить время' (Employee e, DATE df, DATE dt) {
+createTimeEntries 'Fill in time' (Employee e, DATE df, DATE dt) {
     NEWSESSION {
-        FOR iterate(DATE d, df, dt) AND workingHours(d) AND NOT totalHours(e, d) >= workingHours(d) DO {
+        FOR iterate (DATE d, df, dt) AND workingHours (d) AND NOT totalHours (e, d)> = workingHours (d) DO {
         
-            LOCAL hours = NUMERIC[7,2] (Project);
-            hours(Project p) <- PARTITION UNGROUP emptyHours
-                                          PROPORTION STRICT ROUND(2) timePercent(e, p, d)
+            LOCAL hours = NUMERIC [7,2] (Project);
+            hours (Project p) <- PARTITION UNGROUP emptyHours
+                                          PROPORTION STRICT ROUND (2) timePercent (e, p, d)
                                           ORDER p
                                           BY e, d;
                                           
-            FOR timePercent(e, Project p, d) AND hours(p) DO NEW t = TimeEntry {
+            FOR timePercent (e, Project p, d) AND hours (p) DO NEW t = TimeEntry {
             
-                default(t) <- TRUE;
-                date(t) <- d;
-                employee(t) <- e;
-                project(t) <- p;
-                hours(t) <- hours(p);
-                comments(t) <- 'Авто';
+                default (t) <- TRUE;
+                date (t) <- d;
+                employee (t) <- e;
+                project (t) <- p;
+                hours (t) <- hours (p);
+                comments (t) <- 'Auto';
             }
         }
     APPLY;
     }
 }
 
-filterEmployee = DATA LOCAL Employee();
-nameFilterEmployee 'Сотрудник' () = name(filterEmployee()) CHARWIDTH 20;
+filterEmployee = DATA LOCAL Employee ();
+nameFilterEmployee 'Employee' () = name (filterEmployee ()) CHARWIDTH 20;
 
 createTimeEntries (DATE df, DATE dt) {
-    FOR active(Employee e) AND (e == filterEmployee() OR (NOT filterEmployee() AND e IS Employee)) DO {
-        createTimeEntries(e, df, dt);
+    FOR active (Employee e) AND (e == filterEmployee () OR (NOT filterEmployee () AND e IS Employee)) DO {
+        createTimeEntries (e, df, dt);
     }
 }
 
-FORM createTimeEntries 'Заполнить время'
-    OBJECTS dates = (df = DATE, dt = DATE) PANEL 
-    PROPERTIES 'Дата с' = VALUE (df), 'Дата по' = VALUE (dt), nameFilterEmployee() DRAW dates
+FORM createTimeEntries 'Fill Time'
+    OBJECTS dates = (df = DATE, dt = DATE) PANEL
+    PROPERTIES 'Date from' = VALUE (df), 'Date to' = VALUE (dt), nameFilterEmployee () DRAW dates
     
     EVENTS ON OK {
-        createTimeEntries(df, dt);
+        createTimeEntries (df, dt);
     }
 ;
 
-showCreateTimeEntries 'Заполнить время' (Employee e) {
-    filterEmployee() <- e;
+showCreateTimeEntries 'Fill time' (Employee e) {
+    filterEmployee () <- e;
     SHOW createTimeEntries;
 }
 
-EXTEND FORM timeEntryDashboard 
+EXTEND FORM timeEntryDashboard
     PROPERTIES (e) TOOLBAR showCreateTimeEntries
-    PROPERTIES READONLY default(t)
+    PROPERTIES READONLY default (t)
 ;
 
 NAVIGATOR {
@@ -114,8 +114,8 @@ NAVIGATOR {
     }
 }
 
-currentTimeEntryDefault (Employee e) = GROUP LAST TimeEntryDefault t ORDER date(t),t BY employee(t);
+currentTimeEntryDefault (Employee e) = GROUP LAST TimeEntryDefault t ORDER date (t), t BY employee (t);
 
-WHEN LOCAL CHANGED (employee(TimeEntry t)) AND NOT CHANGED (project(t)) AND (GROUP SUM 1 IF timePercent(currentTimeEntryDefault(employee(t)), Project p)) == 1 DO {
-    project(t) <- GROUP MAX Project p IF timePercent(currentTimeEntryDefault(employee(t)), p);
+WHEN LOCAL CHANGED (employee (TimeEntry t)) AND NOT CHANGED (project (t)) AND (GROUP SUM 1 IF timePercent (currentTimeEntryDefault (employee (t)), Project p)) == 1 DO {
+    project (t) <- GROUP MAX Project p IF timePercent (currentTimeEntryDefault (employee (t)), p);
 }
