@@ -4,103 +4,103 @@ REQUIRE Issue, MasterData, Utils, ProjectExternal;
 
 NAMESPACE Project;
 
-id 'ИД' = DATA INTEGER (External, IssueStatus);
-issueStatus (External e, INTEGER id) = GROUP AGGR IssueStatus s BY id(e, s);
+id 'ID' = DATA INTEGER (External, IssueStatus);
+issueStatus (External e, INTEGER id) = GROUP AGGR IssueStatus s BY id (e, s);
 
 EXTEND FORM issueStatus
     OBJECTS e = External
-    PROPERTIES(e) READONLY name
-    PROPERTIES(e, o) id
+    PROPERTIES (e) READONLY name
+    PROPERTIES (e, o) id
 ;
 
-importIssue 'Импорт задач' (External e) {
+importIssue 'Import tasks' (External e) {
     NEWSESSION {
-        LOCAL id = INTEGER(INTEGER);
-        LOCAL subject = STRING[500] (INTEGER);
+        LOCAL id = INTEGER (INTEGER);
+        LOCAL subject = STRING [500] (INTEGER);
         LOCAL description = TEXT (INTEGER);
         LOCAL due_date = DATE (INTEGER);
         LOCAL created_on = DATETIME (INTEGER);
         LOCAL updated_on = DATETIME (INTEGER);
         LOCAL start_date = DATE (INTEGER);
         LOCAL done_ratio = INTEGER (INTEGER);
-        LOCAL estimated_hours = NUMERIC[7,2] (INTEGER);
+        LOCAL estimated_hours = NUMERIC [7,2] (INTEGER);
         LOCAL project_id = INTEGER (INTEGER);
-        LOCAL author_login = STRING[1000] (INTEGER);
-        LOCAL assigned_to_login = STRING[1000] (INTEGER);
-        LOCAL tracker_name = STRING[100] (INTEGER);
+        LOCAL author_login = STRING [1000] (INTEGER);
+        LOCAL assigned_to_login = STRING [1000] (INTEGER);
+        LOCAL tracker_name = STRING [100] (INTEGER);
         LOCAL status_id = INTEGER (INTEGER);
             
         LOCAL file = FILE ();
-        EXTERNAL SQL path(e) EXEC 'SELECT issues.id, subject, issues.description, due_date, issues.created_on, issues.updated_on, start_date, done_ratio, estimated_hours, project_id, authors.login AS author_login, assigned_to.login AS assigned_to_login, trackers.name AS tracker_name, issues.status_id AS status_id FROM issues LEFT JOIN users authors ON issues.author_id = authors.id LEFT JOIN users assigned_to ON issues.assigned_to_id = assigned_to.id LEFT JOIN trackers ON issues.tracker_id = trackers.id' TO file;
+        EXTERNAL SQL path (e) EXEC 'SELECT issues.id, subject, issues.description, due_date, issues.created_on, issues.updated_on, start_date, done_ratio, estimated_hours, project_id, authors.login AS author_login, assigned_to.login AS assigned_to_login, trackers .name AS tracker_name, issues.status_id AS status_id FROM issues LEFT JOIN users authors ON issues.author_id = authors.id LEFT JOIN users assigned_to ON issues.assigned_to_id = assigned_to.id LEFT JOIN trackers ON issues.tracker_id = trackers.id 'TO file ;
 
-        IMPORT TABLE FROM file() TO id, subject, description, due_date, created_on, updated_on, start_date, done_ratio, estimated_hours, 
+        IMPORT TABLE FROM file () TO id, subject, description, due_date, created_on, updated_on, start_date, done_ratio, estimated_hours,
                                                       project_id, author_login, assigned_to_login, tracker_name, status_id;
 
-        FOR INTEGER ii = [GROUP MIN INTEGER i BY STRING[15](id(i))](STRING[15] id) AND id != '' AND NOT issue(id, e) DO NEW s = Issue {
-            id(s) <- id;
-            external(s) <- e;
+        FOR INTEGER ii = [GROUP MIN INTEGER i BY STRING [15] (id (i))] (STRING [15] id) AND id! = '' AND NOT issue (id, e) DO NEW s = Issue {
+            id (s) <- id;
+            external (s) <- e;
         }
         
-        FOR Issue s = issue(STRING[15](id(INTEGER i)), e) AND id(i) DO {
+        FOR Issue s = issue (STRING [15] (id (INTEGER i)), e) AND id (i) DO {
             
-            project(s) <- project(STRING[15](project_id(i)), e);
-            name(s) <- subject(i);
-            description(s) <- description(i);
-            dateTo(s) <- due_date(i);
-            dateTimeCreated(s) <- created_on(i);
-            dateTimeUpdated(s) <- updated_on(i);
-            dateFrom(s) <- start_date(i);
-            doneRatio(s) <- done_ratio(i);
-            estimatedHours(s) <- estimated_hours(i);
-            project(s) <- project(STRING[15](project_id(i)), e);
-            author(s) <- GROUP MAX CustomUser p IF login(p) == author_login(i);
-            assignedTo(s) <- GROUP MAX Employee p IF login(p) == assigned_to_login(i);
-            tracker(s) <- tracker(tracker_name(i));
-            status(s) <- issueStatus(e, status_id(i));
+            project (s) <- project (STRING [15] (project_id (i)), e);
+            name (s) <- subject (i);
+            description (s) <- description (i);
+            dateTo (s) <- due_date (i);
+            dateTimeCreated (s) <- created_on (i);
+            dateTimeUpdated (s) <- updated_on (i);
+            dateFrom (s) <- start_date (i);
+            doneRatio (s) <- done_ratio (i);
+            estimatedHours (s) <- estimated_hours (i);
+            project (s) <- project (STRING [15] (project_id (i)), e);
+            author (s) <- GROUP MAX CustomUser p IF login (p) == author_login (i);
+            assignedTo (s) <- GROUP MAX Employee p IF login (p) == assigned_to_login (i);
+            tracker (s) <- tracker (tracker_name (i));
+            status (s) <- issueStatus (e, status_id (i));
         }
 
-        project(TimeEntry te) <- project(issue(te)) WHERE project(te) != project(issue(te)) AND external(te) = e;
+        project (TimeEntry te) <- project (issue (te)) WHERE project (te)! = project (issue (te)) AND external (te) = e;
         
-        FOR external(Issue s) == e AND NOT [GROUP SUM 1 IF imported(INTEGER i) BY STRING[15](id(i))](id(s)) DO {
+        FOR external (Issue s) == e AND NOT [GROUP SUM 1 IF imported (INTEGER i) BY STRING [15] (id (i))] (id (s)) DO {
             DELETE s;
         }
         APPLY;
     }
 }
 
-importTracker 'Импорт трекеров' (External e) {
+importTracker 'Import trackers' (External e) {
     NEWSESSION {
-        LOCAL name = STRING[100](INTEGER);
+        LOCAL name = STRING [100] (INTEGER);
             
         LOCAL file = FILE ();
-        EXTERNAL SQL path(e) EXEC 'SELECT name FROM trackers' TO file;
+        EXTERNAL SQL path (e) EXEC 'SELECT name FROM trackers' TO file;
         
-        IMPORT TABLE FROM file() TO name;
+        IMPORT TABLE FROM file () TO name;
         
-        FOR [GROUP MIN INTEGER i BY name(i)](STRING[100] name) AND name != '' AND NOT tracker(name) DO NEW s = Tracker {
-            name(s) <- name;
+        FOR [GROUP MIN INTEGER i BY name (i)] (STRING [100] name) AND name! = '' AND NOT tracker (name) DO NEW s = Tracker {
+            name (s) <- name;
         }
         APPLY;
     }
 }
 
-importIssueStatus 'Импорт статусов задачи' (External e) {
+importIssueStatus 'Import task statuses' (External e) {
     NEWSESSION {
         LOCAL id = INTEGER (INTEGER);
-        LOCAL name = STRING[100](INTEGER);
+        LOCAL name = STRING [100] (INTEGER);
             
         LOCAL file = FILE ();
-        EXTERNAL SQL path(e) EXEC 'SELECT id, name FROM issue_statuses' TO file;
+        EXTERNAL SQL path (e) EXEC 'SELECT id, name FROM issue_statuses' TO file;
         
-        IMPORT TABLE FROM file() TO id, name;
+        IMPORT TABLE FROM file () TO id, name;
 
-        FOR [GROUP MIN INTEGER i BY name(i)](STRING[100] name) AND name != '' AND NOT issueStatus(name) DO NEW s = IssueStatus {
-            name(s) <- name;
+        FOR [GROUP MIN INTEGER i BY name (i)] (STRING [100] name) AND name! = '' AND NOT issueStatus (name) DO NEW s = IssueStatus {
+            name (s) <- name;
         }
 
-        FOR name(IssueStatus s) = name(INTEGER i) DO {
-            id(e, IssueStatus se) <- NULL WHERE id(e, se) = id(i);
-            id(e, s) <- id(i);
+        FOR name (IssueStatus s) = name (INTEGER i) DO {
+            id (e, IssueStatus se) <- NULL WHERE id (e, se) = id (i);
+            id (e, s) <- id (i);
         }
 
         APPLY;
@@ -109,28 +109,28 @@ importIssueStatus 'Импорт статусов задачи' (External e) {
 
 open (Issue i) + {
     IF i IS Issue THEN {
-        FOR External e = external(i) AND url(e) DO {
-            open(LINK(url(e) + '/issues/' + id(i)));
+        FOR External e = external (i) AND url (e) DO {
+            open (LINK (url (e) + '/ issues /' + id (i)));
         }
-    } 
+    }
 }
 
-apiKey = DATA STRING[50] (External, User);
+apiKey = DATA STRING [50] (External, User);
 EXTEND FORM external
-    OBJECTS e = User
-    PROPERTIES(e) READONLY name, login GRID
-    PROPERTIES(o, e) apiKey
+     OBJECTS e = User
+     PROPERTIES (e) READONLY name, login GRID
+     PROPERTIES (o, e) apiKey
     
-    FILTERGROUP active
-        FILTER 'Активные' active(e) DEFAULT
+     FILTERGROUP active
+         FILTER 'Active' active (e) DEFAULT
 ;
 
 changeStatus (Issue i, IssueStatus s) + {
-    FOR External e = external(i) AND url(e) DO 
-        IF apiKey(e, currentUser()) THEN {
-            stringToFile('\{ "issue": \{ "status_id" : "' + id(e, s) + '" \} \}', 'UTF-8', 'json');
-            LOCAL result = FILE();
-            EXTERNAL HTTP PUT url(e) + '/issues/' + id(i) + '.json?key=' + apiKey(e, currentUser()) PARAMS resultFile() TO result; 
-        } ELSE
-            MESSAGE 'Для пользователя не задан api key. Статус в Redmine не будет изменен.';
+     FOR External e = external (i) AND url (e) DO
+         IF apiKey (e, currentUser ()) THEN {
+             stringToFile ('\ {"issue": \ {"status_id": "' + id (e, s) + '" \} \}', 'UTF-8', 'json');
+             LOCAL result = FILE ();
+             EXTERNAL HTTP PUT url (e) + '/ issues /' + id (i) + '.json? Key =' + apiKey (e, currentUser ()) PARAMS resultFile () TO result;
+         } ELSE
+             MESSAGE 'The api key is not set for the user. Redmine status will not be changed. ';
 }
