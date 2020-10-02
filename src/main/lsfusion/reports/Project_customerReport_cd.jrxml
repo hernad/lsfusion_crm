@@ -58,7 +58,7 @@
 				<textElement textAlignment="Center">
 					<font size="12" isBold="true"/>
 				</textElement>
-				<textFieldExpression><![CDATA["Отчёт по предприятию: " + $F{name(c)} + ($F{nameFilterProject(c)}!=null?(". Проект: " + $F{nameFilterProject(c)}):"") + ($F{nameFilterAgreement()}!=null?(". " + $F{nameFilterAgreement()}):"") + ($F{nameFilterContract()}!=null?(". " + $F{nameFilterContract()}):"")]]></textFieldExpression>
+				<textFieldExpression> <! [CDATA ["Enterprise report:" + $F{name(c)} + ($F{nameFilterProject(c)}! = null? (". Project:" + $F{nameFilterProject(c)}): "") + ($F{nameFilterAgreement ()}! = Null? ("." + $F{nameFilterAgreement ()}): "") + ($F{nameFilterContract()}! = Null? ("." + $ F {nameFilterContract()}): "")]]></textFieldExpression>
 			</textField>
 		</band>
 	</title>
@@ -73,7 +73,7 @@
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Center"/>
-				<textFieldExpression><![CDATA["Часы"]]></textFieldExpression>
+				<textFieldExpression><![CDATA["Clock"]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
 				<reportElement stretchType="RelativeToBandHeight" x="122" y="0" width="70" height="15" uuid="463638b7-691b-408d-b5bc-807e6eee8633"/>
