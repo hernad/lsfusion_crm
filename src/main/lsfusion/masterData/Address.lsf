@@ -25,14 +25,14 @@ changeAddressTypes (Address a) {
     SHOW dialogAddressTypes;
 }
 
-postcode 'Index' = DATA ISTRING [10] (Address) CHARWIDTH 6;
-region 'Region' = DATA ISTRING [20] (Address) CHARWIDTH 15;
-district 'District' = DATA ISTRING [20] (Address) CHARWIDTH 15;
-locality 'Us. item '= DATA ISTRING [200] (Address) CHARWIDTH 20 IN id;
-street 'Street' = DATA ISTRING [50] (Address) CHARWIDTH 20;
-houseNumber 'House' = DATA ISTRING [20] (Address) CHARWIDTH 6;
-officeNumber 'Office' = DATA ISTRING [20] (Address) CHARWIDTH 6;
-extra 'Extra' = DATA ISTRING [200] (Address) CHARWIDTH 20;
+postcode 'Index' = DATA ISTRING[10] (Address) CHARWIDTH 6;
+region 'Region' = DATA ISTRING[20] (Address) CHARWIDTH 15;
+district 'District' = DATA ISTRING[20] (Address) CHARWIDTH 15;
+locality 'Us. item '= DATA ISTRING[200] (Address) CHARWIDTH 20 IN id;
+street 'Street' = DATA ISTRING[50] (Address) CHARWIDTH 20;
+houseNumber 'House' = DATA ISTRING[20] (Address) CHARWIDTH 6;
+officeNumber 'Office' = DATA ISTRING[20] (Address) CHARWIDTH 6;
+extra 'Extra' = DATA ISTRING[200] (Address) CHARWIDTH 20;
 name 'Address' (Address a) = CONCAT ',', region (a) + 'region', district (a) + 'district', locality (a), street (a), 'house' + houseNumber (a) , 'office' + officeNumber (a), extra (a);
 
 FORM addresses 'Addresses'
