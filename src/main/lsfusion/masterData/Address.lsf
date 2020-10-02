@@ -2,40 +2,40 @@ MODULE Address;
 
 NAMESPACE Address;
 
-CLASS Address 'Адрес';
-TABLE address(Address);
+CLASS Address 'Address';
+TABLE address (Address);
 
-CLASS AddressType 'Тип адреса' {
-    physical 'Физический',
-    legal 'Юридический'
+CLASS AddressType 'Address type' {
+    physical 'Physical',
+    legal 'Legal'
 }
-name 'Наименование' (AddressType t) = staticCaption(t) IF t IS AddressType;
+name 'Name' (AddressType t) = staticCaption (t) IF t IS AddressType;
 
-in 'Вкл.' = DATA BOOLEAN (Address, AddressType);
-types 'Тип' (Address a) = GROUP CONCAT name(AddressType t) IF in(a, t), ', ' ORDER DESC name(t) CHARWIDTH 15;
+in 'On' = DATA BOOLEAN (Address, AddressType);
+types 'Type' (Address a) = GROUP CONCAT name (AddressType t) IF in (a, t), ',' ORDER DESC name (t) CHARWIDTH 15;
 
 
-FORM dialogAddressTypes 'Типы адреса'
-    OBJECTS a = Address PANEL 
+FORM dialogAddressTypes 'Address Types'
+    OBJECTS a = Address PANEL
     OBJECTS t = AddressType
-    PROPERTIES in(a, t), name(t) READONLY 
+    PROPERTIES in (a, t), name (t) READONLY
 ;
 
 changeAddressTypes (Address a) {
     SHOW dialogAddressTypes;
 }
 
-postcode 'Индекс' = DATA ISTRING[10] (Address) CHARWIDTH 6;
-region 'Область' = DATA ISTRING[20] (Address) CHARWIDTH 15;
-district 'Район' = DATA ISTRING[20] (Address) CHARWIDTH 15;
-locality 'Нас. пункт' = DATA ISTRING[200] (Address) CHARWIDTH 20 IN id;
-street 'Улица' = DATA ISTRING[50] (Address) CHARWIDTH 20;
-houseNumber 'Дом' = DATA ISTRING[20] (Address) CHARWIDTH 6;
-officeNumber 'Офис' = DATA ISTRING[20] (Address) CHARWIDTH 6;
-extra 'Дополнительно' = DATA ISTRING[200](Address) CHARWIDTH 20;
-name 'Адрес' (Address a) = CONCAT ', ', region(a) + ' область', district(a) + ' район', locality(a), street(a), 'дом ' + houseNumber(a), 'офис ' + officeNumber(a), extra(a);
+postcode 'Index' = DATA ISTRING [10] (Address) CHARWIDTH 6;
+region 'Region' = DATA ISTRING [20] (Address) CHARWIDTH 15;
+district 'District' = DATA ISTRING [20] (Address) CHARWIDTH 15;
+locality 'Us. item '= DATA ISTRING [200] (Address) CHARWIDTH 20 IN id;
+street 'Street' = DATA ISTRING [50] (Address) CHARWIDTH 20;
+houseNumber 'House' = DATA ISTRING [20] (Address) CHARWIDTH 6;
+officeNumber 'Office' = DATA ISTRING [20] (Address) CHARWIDTH 6;
+extra 'Extra' = DATA ISTRING [200] (Address) CHARWIDTH 20;
+name 'Address' (Address a) = CONCAT ',', region (a) + 'region', district (a) + 'district', locality (a), street (a), 'house' + houseNumber (a) , 'office' + officeNumber (a), extra (a);
 
-FORM addresses 'Адреса'
+FORM addresses 'Addresses'
     OBJECTS a = Address
     PROPERTIES (a) READONLY types, postcode, region, district, locality, street, houseNumber, officeNumber, extra, name
     
