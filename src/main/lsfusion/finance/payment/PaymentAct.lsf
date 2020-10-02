@@ -4,50 +4,50 @@ REQUIRE PaymentAgreement, Act;
 
 NAMESPACE Payment;
 
-act = DATA Act(Payment);
-idAct 'Код акта' (Payment a) = id(act(a));
-numberAct 'Номер акта' (Payment a) = number(act(a)) IN id;
+act = DATA Act (Payment);
+idAct 'Act code' (Payment a) = id (act (a));
+numberAct 'Act number' (Payment a) = number (act (a)) IN id;
 
-paidPayment 'Оплачено' (Act c) = GROUP SUM sum(Payment p) BY act(p) MATERIALIZED;
+paidPayment 'Paid' (Act c) = GROUP SUM sum (Payment p) BY act (p) MATERIALIZED;
 
-paidNotPaymentAct (Agreement a) = paid(a) (-) [GROUP SUM paidPayment(Act act) BY agreement(act)](a);
+paidNotPaymentAct (Agreement a) = paid (a) (-) [GROUP SUM paidPayment (Act act) BY agreement (act)] (a);
 
-paidAgreement 'Оплачено' (Act a) = PARTITION UNGROUP paidNotPaymentAct
-                                                      LIMIT STRICT sum(a) (-) paidPayment(a)
-                                                      ORDER date(a),a 
-                                                      BY agreement(a) MATERIALIZED; 
+paidAgreement 'Paid' (Act a) = PARTITION UNGROUP paidNotPaymentAct
+                                                      LIMIT STRICT sum (a) (-) paidPayment (a)
+                                                      ORDER date (a), a
+                                                      BY agreement (a) MATERIALIZED;
 
-paidNotPaymentAgreementAct (Contract c) = paid(c) (-) [GROUP SUM paidPayment(Act act) (+) paidAgreement(act) BY contract(act)](c);
+paidNotPaymentAgreementAct (Contract c) = paid (c) (-) [GROUP SUM paidPayment (Act act) (+) paidAgreement (act) BY contract (act)] (c);
 
-paidContract 'Оплачено' (Act a) = PARTITION UNGROUP paidNotPaymentAgreementAct
-                                                        LIMIT STRICT sum(a) (-) paidPayment(a) (-) paidAgreement(a)
-                                                        ORDER date(a),a 
-                                                        BY contract(a) MATERIALIZED; 
+paidContract 'Paid' (Act a) = PARTITION UNGROUP paidNotPaymentAgreementAct
+                                                        LIMIT STRICT sum (a) (-) paidPayment (a) (-) paidAgreement (a)
+                                                        ORDER date (a), a
+                                                        BY contract (a) MATERIALIZED;
                                                       
-paid 'Оплачено' (Act a) = paidContract(a) (+) paidPayment(a) (+) paidAgreement(a);
+paid 'Paid' (Act a) = paidContract (a) (+) paidPayment (a) (+) paidAgreement (a);
 
-paid(Act c) += paid(c);                          
+paid (Act c) + = paid (c);
 
-CONSTRAINT contract(act(Payment p)) != contract(p) CHECKED BY act[Payment] MESSAGE 'Договор акта должен совпадать с договором платежа';
+CONSTRAINT contract (act (Payment p))! = Contract (p) CHECKED BY act [Payment] MESSAGE 'The act agreement must match the payment agreement';
 
-EXTEND FORM dialogActs PROPERTIES paid(o) AFTER sum(o);
+EXTEND FORM dialogActs PROPERTIES paid (o) AFTER sum (o);
 
-split 'Разбить платеж' (Payment p) {
+split 'Split payment' (Payment p) {
     DIALOG dialogInputSum OBJECTS n INPUT DO {
-        IF n < sum(p) THEN NEW pp = Payment {
-            sum(p) <- sum(p) (-) n;
-            sum(pp) <- n;
-            legalEntity(pp) <- legalEntity(p);
-            company(pp) <- company(p);
-            contract(pp) <- contract(p);
-            act(pp) <- act(p);
-            number(pp) <- number(p);
-            date(pp) <- date(p);
-            note(pp) <- note(p);
-            currency(pp) <- currency(p);
-            account(pp) <- account(p);
+        IF n <sum (p) THEN NEW pp = Payment {
+            sum (p) <- sum (p) (-) n;
+            sum (pp) <- n;
+            legalEntity (pp) <- legalEntity (p);
+            company (pp) <- company (p);
+            contract (pp) <- contract (p);
+            act (pp) <- act (p);
+            number (pp) <- number (p);
+            date (pp) <- date (p);
+            note (pp) <- note (p);
+            currency (pp) <- currency (p);
+            account (pp) <- account (p);
         }
-        ELSE MESSAGE 'Сумма больше суммы платежа';
+        ELSE MESSAGE 'The amount is greater than the payment amount';
     }
 }
 
@@ -55,15 +55,15 @@ EXTEND FORM payment PROPERTIES (o) numberAct;
 
 DESIGN payment {
     docs {
-        MOVE PROPERTY (numberAct(o));
+        MOVE PROPERTY (numberAct (o));
     }
 }
 
-EXTEND FORM payments 
+EXTEND FORM payments
     PROPERTIES (o) READONLY numberAct
 ;
-EXTEND FORM dialogPayments 
+EXTEND FORM dialogPayments
     PROPERTIES (o) READONLY numberAct
 ;
 
-EXTEND FORM contract PROPERTIES READONLY paid(ac), numberAct(p);
+EXTEND FORM contract PROPERTIES READONLY paid (ac), numberAct (p);
