@@ -4,33 +4,33 @@ REQUIRE MasterData;
 
 NAMESPACE Role;
 
-CLASS Role 'Роль';
-TABLE role(Role);
+CLASS Role 'Role';
+TABLE role (Role);
 
-name 'Наименование' = DATA ISTRING[100](Role);
+name 'Name' = DATA ISTRING [100] (Role);
 
-FORM role 'Роль'
-    OBJECTS r = Role PANEL 
-    PROPERTIES (r) name
+FORM role 'Role'
+     OBJECTS r = Role PANEL
+     PROPERTIES (r) name
     
-    EDIT Role OBJECT r
+     EDIT Role OBJECT r
 ;
-FORM roles 'Роли'
-    OBJECTS r = Role 
-    PROPERTIES (r) READONLY name
-    PROPERTIES (r) NEWSESSION NEW, EDIT, DELETE 
-    ORDERS name(r)
+FORM roles 'Roles'
+     OBJECTS r = Role
+     PROPERTIES (r) READONLY name
+     PROPERTIES (r) NEWSESSION NEW, EDIT, DELETE
+     ORDERS name (r)
 ;
-FORM dialogRoles 'Роли'
-    OBJECTS r = Role 
-    PROPERTIES (r) READONLY name
-    ORDERS name(r)
+FORM dialogRoles 'Roles'
+     OBJECTS r = Role
+     PROPERTIES (r) READONLY name
+     ORDERS name (r)
     
-    LIST Role OBJECT r
+     LIST Role OBJECT r
 ;
 
 NAVIGATOR {
-    masterData {
-        NEW roles;
-    }
+     masterData {
+         NEW roles;
+     }
 }
