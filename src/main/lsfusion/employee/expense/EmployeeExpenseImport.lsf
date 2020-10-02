@@ -4,48 +4,48 @@ REQUIRE EmployeeExpense;
 
 NAMESPACE Employee;
 
-importEmployeeExpense 'Импорт расходов по сотрудникам' () {
+importEmployeeExpense 'Import Employee Expenses' () {
     
     NEWSESSION {
-        LOCAL number = STRING[15] (INTEGER);
+        LOCAL number = STRING [15] (INTEGER);
         LOCAL year = INTEGER (INTEGER);
         LOCAL month = INTEGER (INTEGER);
-        LOCAL type = STRING[100](INTEGER);
-        LOCAL sum = NUMERIC[18,4](INTEGER);
-        LOCAL expense = Expense(INTEGER);
+        LOCAL type = STRING [100] (INTEGER);
+        LOCAL sum = NUMERIC [18,4] (INTEGER);
+        LOCAL expense = Expense (INTEGER);
         
         INPUT f = FILE DO {
-//            IMPORT XLS NOHEADER FROM f TO number, year, month, type, sum;
+// IMPORT XLS NOHEADER FROM f TO number, year, month, type, sum;
   
             LOCAL yearMonth = TEXT (INTEGER);
             IMPORT DBF CHARSET 'CP866' FROM f TO yearMonth, number, type, sum;
-            type(INTEGER i) <- 'Зарплата' WHERE sum(i);
-            month(INTEGER i) <- INTEGER(getWord(yearMonth(i), ' ', 1));
-            year(INTEGER i) <- INTEGER(getWord(yearMonth(i), ' ', 2));
+            type (INTEGER i) <- 'Salary' WHERE sum (i);
+            month (INTEGER i) <- INTEGER (getWord (yearMonth (i), '', 1));
+            year (INTEGER i) <- INTEGER (getWord (yearMonth (i), '', 2));
           
-            FOR [GROUP MIN INTEGER i IF employeeNumber(number(i)) BY type(i)](STRING[15] name) 
-                AND NOT [GROUP MAX ExpenseType t BY name(t)](name) DO NEW t = ExpenseType {
+            FOR [GROUP MIN INTEGER i IF employeeNumber (number (i)) BY type (i)] (STRING [15] name)
+                AND NOT [GROUP MAX ExpenseType t BY name (t)] (name) DO NEW t = ExpenseType {
                 
-                name(t) <- name;
+                name (t) <- name;
             }
             
-            expense(INTEGER i) <- expense(employeeNumber(number(i)), (GROUP MAX ExpenseType t IF name(t) == type(i)), year(i), (GROUP MAX Month m IF number(m) == month(i)));
+            expense (INTEGER i) <- expense (employeeNumber (number (i)), (GROUP MAX ExpenseType t IF name (t) == type (i)), year (i), (GROUP MAX Month m IF number (m) == month (i)));
                         
-            FOR employeeNumber(number(INTEGER i)) AND number(i) AND NOT expense(i) DO NEW e = Expense {
+            FOR employeeNumber (number (INTEGER i)) AND number (i) AND NOT expense (i) DO NEW e = Expense {
             
-                employee(e) <- employeeNumber(number(i));
-                year(e) <- year(i);
-                month(e) <- GROUP MAX Month m IF number(m) == month(i);
-                type(e) <- GROUP MAX ExpenseType t IF name(t) == type(i);
-                expense(i) <- e;
+                employee (e) <- employeeNumber (number (i));
+                year (e) <- year (i);
+                month (e) <- GROUP MAX Month m IF number (m) == month (i);
+                type (e) <- GROUP MAX ExpenseType t IF name (t) == type (i);
+                expense (i) <- e;
             }
             
-            FOR Expense e = expense(INTEGER i) DO {
-                sum(e) <- sum(i);
+            FOR Expense e = expense (INTEGER i) DO {
+                sum (e) <- sum (i);
             }
         }
         APPLY;
     }
 }
 
-EXTEND FORM expenses PROPERTIES importEmployeeExpense() DRAW e TOOLBAR;
+EXTEND FORM expenses PROPERTIES importEmployeeExpense () DRAW e TOOLBAR;
