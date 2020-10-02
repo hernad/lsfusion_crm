@@ -5,123 +5,122 @@ REQUIRE System,
         SchedulerDefaultData;
 
 
-//---------------------------------------------- Импорт курсов НБРБ -----------------------------------------------------//
+// ---------------------------------------------- Import rates NBRB ------------------------------------------------- ---- //
 
-GROUP nbrb 'Курсы НБРБ' : public;
+GROUP nbrb 'NBRB Courses': public;
 
-importNBRBExchangeRateDateFrom 'Дата с' = DATA DATE () IN nbrb;
-importNBRBExchangeRateDateTo 'Дата по' = DATA DATE () IN nbrb;
+importNBRBExchangeRateDateFrom 'Date from' = DATA DATE () IN nbrb;
+importNBRBExchangeRateDateTo 'Date by' = DATA DATE () IN nbrb;
 
-importNBRBExchangeRateDaysCount 'Кол-во дней' = DATA INTEGER() IN nbrb;
+importNBRBExchangeRateDaysCount 'Number of days' = DATA INTEGER () IN nbrb;
 
-cur_Abbreviation = DATA LOCAL STRING[255] (INTEGER);
+cur_Abbreviation = DATA LOCAL STRING [255] (INTEGER);
 cur_ID = DATA LOCAL INTEGER (INTEGER);
 cur_Scale = DATA LOCAL INTEGER (INTEGER);
-cur_OfficialRate = DATA LOCAL NUMERIC[20,13](INTEGER);
-dateTime = DATA LOCAL STRING[255] (INTEGER );
+cur_OfficialRate = DATA LOCAL NUMERIC [20,13] (INTEGER);
+dateTime = DATA LOCAL STRING [255] (INTEGER);
 
-importNBRBExchangeRate 'Импортировать курсы НБРБ за период'(DATE dateFrom, DATE dateTo)  { 
-    LOCAL result = FILE();
-    EXTERNAL HTTP GET 'http://www.nbrb.by/API/ExRates/Currencies' PARAMS System.exportFile() TO result;
-    IMPORT JSON FROM result() TO cur_Abbreviation = Cur_Abbreviation, cur_ID = Cur_ID, cur_Scale = Cur_Scale;
+importNBRBExchangeRate 'Import NBRB rates for the period' (DATE dateFrom, DATE dateTo) {
+    LOCAL result = FILE ();
+    EXTERNAL HTTP GET 'http://www.nbrb.by/API/ExRates/Currencies' PARAMS System.exportFile () TO result;
+    IMPORT JSON FROM result () TO cur_Abbreviation = Cur_Abbreviation, cur_ID = Cur_ID, cur_Scale = Cur_Scale;
     FOR Currency c IS Currency DO {
-        FOR NOT typeExchange('НБРБ (' +shortName(c)+')') NEW te = TypeExchange DO {
-            name(te)<-'НБРБ (' +shortName(c)+')';
-            currency(te)<-c;
+        FOR NOT typeExchange ('NBRB (' + shortName (c) + ')') NEW te = TypeExchange DO {
+            name (te) <- 'NBRB (' + shortName (c) + ')';
+            currency (te) <- c;
         }
-        FOR cur_Abbreviation(INTEGER i) = shortName(c) DO{
-            LOCAL result2 = FILE();
-            LOCAL aaa = STRING[255]();
-            EXTERNAL HTTP GET 'http://www.nbrb.by/API/ExRates/Rates/Dynamics/' + cur_ID(i)
-                                                  + '?startDate=' + [FORMULA STRING[20] 'to_char(($1),\'MM/DD/YYYY\')'](dateFrom) 
-                                                  + '&endDate=' +  [FORMULA STRING[20] 'to_char(($1),\'MM/DD/YYYY\')'](dateTo) TO result2;
-            cur_OfficialRate(INTEGER j) <- NULL;
-            IMPORT JSON FROM result2() TO cur_OfficialRate = Cur_OfficialRate, dateTime = Date;
-            FOR cur_OfficialRate(INTEGER j) AND DATE date1 = DATE(getWord(dateTime(j), 'T', 1)) DO {
-                rate(TypeExchange te,c,date1 ) <- NUMERIC[20,13](cur_OfficialRate(j)/cur_Scale(i)) WHERE shortName(currency(te))  = 'BYN' ;
-                rate(TypeExchange te,Currency c1,date1 ) <- NUMERIC[20,13](1/(cur_OfficialRate(j)/cur_Scale(i))) WHERE shortName(c1)  = 'BYN' AND currency(te) = c;
+        FOR cur_Abbreviation (INTEGER i) = shortName (c) DO {
+            LOCAL result2 = FILE ();
+            LOCAL aaa = STRING [255] ();
+            EXTERNAL HTTP GET 'http://www.nbrb.by/API/ExRates/Rates/Dynamics/' + cur_ID (i)
+                                                  + '? startDate =' + [FORMULA STRING [20] 'to_char (($ 1), \' MM / DD / YYYY \ ')'] (dateFrom)
+                                                  + '& endDate =' + [FORMULA STRING [20] 'to_char (($ 1), \' MM / DD / YYYY \ ')'] (dateTo) TO result2;
+            cur_OfficialRate (INTEGER j) <- NULL;
+            IMPORT JSON FROM result2 () TO cur_OfficialRate = Cur_OfficialRate, dateTime = Date;
+            FOR cur_OfficialRate (INTEGER j) AND DATE date1 = DATE (getWord (dateTime (j), 'T', 1)) DO {
+                rate (TypeExchange te, c, date1) <- NUMERIC [20,13] (cur_OfficialRate (j) / cur_Scale (i)) WHERE shortName (currency (te)) = 'BYN';
+                rate (TypeExchange te, Currency c1, date1) <- NUMERIC [20,13] (1 / (cur_OfficialRate (j) / cur_Scale (i))) WHERE shortName (c1) = 'BYN' AND currency (te) = c;
             }
         }
     }
-    apply();
+    apply ();
 } IN nbrb;
 
-importNBRBExchangeRateDateFromDateTo 'Импортировать курсы НБРБ'()  { 
-    IF sum(importNBRBExchangeRateDateFrom(),365)<= importNBRBExchangeRateDateTo() THEN 
-        ASK 'Период задан больше 365 дней, будет принято только первые 365 дней' DO {importNBRBExchangeRate(importNBRBExchangeRateDateFrom(),importNBRBExchangeRateDateTo());} ELSE{RETURN ;}
-        ELSE importNBRBExchangeRate(importNBRBExchangeRateDateFrom(),importNBRBExchangeRateDateTo());
+importNBRBExchangeRateDateFromDateTo 'Import NBRB rates' () {
+    IF sum (importNBRBExchangeRateDateFrom (), 365) <= importNBRBExchangeRateDateTo () THEN
+        ASK 'The period is more than 365 days, only the first 365 days will be accepted' DO {importNBRBExchangeRate (importNBRBExchangeRateDateFrom (), importNBRBExchangeRateDateTo ());} ELSE {RETURN;}
+        ELSE importNBRBExchangeRate (importNBRBExchangeRateDateFrom (), importNBRBExchangeRateDateTo ());
 } IN nbrb;
 
-importNBRBExchangeRateLastDays 'Импортировать последние курсы НБРБ'()  { 
-    IF importNBRBExchangeRateDaysCount()>365 THEN 
-        ASK 'Кол-во дней задана больше 365 дней, будет принято только первые 365 дней' DO {importNBRBExchangeRate(subtract(currentDate(),importNBRBExchangeRateDaysCount()),currentDate());} ELSE{RETURN ;}
-        ELSE importNBRBExchangeRate(subtract(currentDate(),importNBRBExchangeRateDaysCount()),currentDate());
+importNBRBExchangeRateLastDays 'Import latest NBRB rates' () {
+    IF importNBRBExchangeRateDaysCount ()> 365 THEN
+        ASK 'The number of days is more than 365 days, only the first 365 days will be accepted' DO {importNBRBExchangeRate (subtract (currentDate (), importNBRBExchangeRateDaysCount ()), currentDate ());} ELSE {RETURN;}
+        ELSE importNBRBExchangeRate (subtract (currentDate (), importNBRBExchangeRateDaysCount ()), currentDate ());
 } IN nbrb;
-
 
 EXTEND FORM typeExchangeCurrencyDate
-    PROPERTIES() importNBRBExchangeRateDateFrom, importNBRBExchangeRateDateTo, importNBRBExchangeRateDateFromDateTo
-    PROPERTIES() importNBRBExchangeRateDaysCount, importNBRBExchangeRateLastDays
+    PROPERTIES () importNBRBExchangeRateDateFrom, importNBRBExchangeRateDateTo, importNBRBExchangeRateDateFromDateTo
+    PROPERTIES () importNBRBExchangeRateDaysCount, importNBRBExchangeRateLastDays
 ;
 
 DESIGN typeExchangeCurrencyDate {
     importExchangeRates {
-        MOVE GROUP(nbrb) {type = CONTAINERH;}
+        MOVE GROUP (nbrb) {type = CONTAINERH;}
         NEW lastDaysContainer {
             type = CONTAINERH;
-            MOVE PROPERTY(importNBRBExchangeRateDaysCount());
-            MOVE PROPERTY(importNBRBExchangeRateLastDays());
+            MOVE PROPERTY (importNBRBExchangeRateDaysCount ());
+            MOVE PROPERTY (importNBRBExchangeRateLastDays ());
         }
         
     }
 }
 
-loadDefaultScheduledTasks () + {  
-    loadDefaultScheduledTask ('Загрузка курсов НБРБ', 2014_07_01_15:00, 43200, SchedulerStartType.afterFinish);
-    loadDefaultScheduledTaskDetail ('Загрузка курсов НБРБ', 1, 'NBRB.importNBRBExchangeRateLastDays[]');
+loadDefaultScheduledTasks () + {
+    loadDefaultScheduledTask ('Loading NBRB courses', 2014_07_01_15: 00, 43200, SchedulerStartType.afterFinish);
+    loadDefaultScheduledTaskDetail ('Loading NBRB rates', 1, 'NBRB.importNBRBExchangeRateLastDays []');
 }
 
-fillCrossFromTo 'Пересчитать обратный и кросс-курс за период'(DATE dateFrom, DATE dateTo)  { 
-    LOCAL dateCur = DATE();
+fillCrossFromTo 'Recalculate inverse and cross rate for the period' (DATE dateFrom, DATE dateTo) {
+    LOCAL dateCur = DATE ();
     
-    dateCur() <- dateFrom;
-    WHILE dateCur() <= dateTo DO { 
-        FOR parent(TypeExchange t) DO {
-            IF isRevers(t) THEN {    
-                rate(t, Currency c, DATE date) <- NUMERIC[15,8]( 1 / (rate(parent(t), currency(t), dateCur()) IF rate(parent(t), currency(t), dateCur())!=0)) 
-                    WHERE date == dateCur() AND c ==currency(parent(t));
+    dateCur () <- dateFrom;
+    WHILE dateCur () <= dateTo DO {
+        FOR parent (TypeExchange t) DO {
+            IF isRevers (t) THEN {
+                rate (t, Currency c, DATE date) <- NUMERIC [15.8] (1 / (rate (parent (t), currency (t), dateCur ()) IF rate (parent (t), currency (t) , dateCur ())! = 0))
+                    WHERE date == dateCur () AND c == currency (parent (t));
             } ELSE {
-                rate(t, Currency c, DATE date) <- NUMERIC[15,8](rateOn(parent(t), c, dateCur())/(rateOn(parent(t), currency(t), dateCur()) IF rateOn(parent(t), currency(t), dateCur())!=0)) WHERE date == dateCur() AND c IS Currency;
+                rate (t, Currency c, DATE date) <- NUMERIC [15.8] (rateOn (parent (t), c, dateCur ()) / (rateOn (parent (t), currency (t), dateCur ()) IF rateOn (parent (t), currency (t), dateCur ())! = 0)) WHERE date == dateCur () AND c IS Currency;
             
-            }        
+            }
         }
-        dateCur() <- sum(dateCur(), 1);
+        dateCur () <- sum (dateCur (), 1);
     }
 }
 
-fillCrossPeriod 'Пересчитать обратный и кросс-курс за период'()  { 
-    IF importNBRBExchangeRateDateFrom() AND importNBRBExchangeRateDateTo() THEN {
-        fillCrossFromTo(importNBRBExchangeRateDateFrom(), importNBRBExchangeRateDateTo());
-        apply();
+fillCrossPeriod 'Recalculate reverse and cross rate for the period' () {
+    IF importNBRBExchangeRateDateFrom () AND importNBRBExchangeRateDateTo () THEN {
+        fillCrossFromTo (importNBRBExchangeRateDateFrom (), importNBRBExchangeRateDateTo ());
+        apply ();
     } ELSE {
-        MESSAGE 'Не задан период';
-    }    
+        MESSAGE 'No period specified';
+    }
 } IN nbrb;
 
-fillCrossLastDays 'Пересчитать обратный и кросс-курс последние'()  {    
-    IF importNBRBExchangeRateDaysCount() THEN {        
-        fillCrossFromTo(subtract(currentDate(), importNBRBExchangeRateDaysCount()), currentDate());
-        apply();
+fillCrossLastDays 'Recalculate inverse and cross rate last' () {
+    IF importNBRBExchangeRateDaysCount () THEN {
+        fillCrossFromTo (subtract (currentDate (), importNBRBExchangeRateDaysCount ()), currentDate ());
+        apply ();
     } ELSE {
-        MESSAGE 'Не указано количество дней для пересчета';
-    }    
+        MESSAGE 'The number of days to recalculate is not specified';
+    }
 }
 
 EXTEND FORM typeExchangeCurrencyDate
-    PROPERTIES() fillCrossPeriod, fillCrossLastDays
+    PROPERTIES () fillCrossPeriod, fillCrossLastDays
 ;
 DESIGN typeExchangeCurrencyDate {
     lastDaysContainer {
-        MOVE PROPERTY(fillCrossLastDays());
+        MOVE PROPERTY (fillCrossLastDays ());
     }
 }
