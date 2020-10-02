@@ -4,64 +4,64 @@ REQUIRE Equipment, SystemEvents;
 
 NAMESPACE Equipment;
 
-equipmentID 'Идентификатор оборудования' = DATA ISTRING[20](SubjectType);
+equipmentID 'Equipment ID' = DATA ISTRING [20] (SubjectType);
 
-EXTEND FORM subjectType PROPERTIES equipmentID(o);
+EXTEND FORM subjectType PROPERTIES equipmentID (o);
 
 file = DATA FILE (Equipment);
-downloadFile 'Открыть файл лицензии' (Equipment a)  { open(file(a), 'lic'); }
+downloadFile 'Open license file' (Equipment a) {open (file (a), 'lic'); }
 
-generateLicense = FORMULA TEXT 'generateLicense($1,$2)';
+generateLicense = FORMULA TEXT 'generateLicense ($ 1, $ 2)';
 
-generateLicense 'Сгенерировать лицензию' (Equipment e) {
-    stringToFile((GROUP CONCAT generateLicense(equipmentID(subjectType(e)), number(EquipmentSerial s)) IF equipment(s) == e, '\r\r\n'), 'UTF-8', '');
-    file(e) <- resultFile();
+generateLicense 'Generate License' (Equipment e) {
+    stringToFile ((GROUP CONCAT generateLicense (equipmentID (subjectType (e)), number (EquipmentSerial s)) IF equipment (s) == e, '\ r \ r \ n'), 'UTF-8', '');
+    file (e) <- resultFile ();
 }
 
-CONSTRAINT DROPPED (Equipment e IS Equipment) AND PREV (file(e)) MESSAGE 'Нельзя удалять оборудование, у когорого есть файл лицензии';
+CONSTRAINT DROPPED (Equipment e IS Equipment) AND PREV (file (e)) MESSAGE 'You cannot remove equipment that has a license file';
 
-CLASS SerialNumberLog 'Лог серийного номера';
+CLASS SerialNumberLog 'Serial number log';
 TABLE serialNumberLog (SerialNumberLog);
 
-equipmentSerial = DATA EquipmentSerial(SerialNumberLog) NONULL DELETE;
-equipment (SerialNumberLog l) = equipment(equipmentSerial(l));
-numberSerial 'Серийный номер' (SerialNumberLog l) = number(equipmentSerial(l));
+equipmentSerial = DATA EquipmentSerial (SerialNumberLog) NONULL DELETE;
+equipment (SerialNumberLog l) = equipment (equipmentSerial (l));
+numberSerial 'Serial Number' (SerialNumberLog l) = number (equipmentSerial (l));
 
-computer = DATA Computer(SerialNumberLog);
-hostnameComputer 'Имя компьютера' (SerialNumberLog l) = hostname(computer(l)) CHARWIDTH 15; 
+computer = DATA Computer (SerialNumberLog);
+hostnameComputer 'Computer name' (SerialNumberLog l) = hostname (computer (l)) CHARWIDTH 15;
 
-user = DATA User(SerialNumberLog);
-loginUser 'Логин пользователя' (SerialNumberLog l) = login(user(l)); 
-nameContact 'Имя пользователя' (SerialNumberLog l) = name(user(l)) IN id;
+user = DATA User (SerialNumberLog);
+loginUser 'User login' (SerialNumberLog l) = login (user (l));
+nameContact 'Username' (SerialNumberLog l) = name (user (l)) IN id;
 
-dateTime 'Время изменения' = DATA DATETIME (SerialNumberLog) IN id;
-date 'Дата изменения' (SerialNumberLog d) = DATE(dateTime(d));
-time 'Время изменения' (SerialNumberLog d) = TIME(dateTime(d));
+dateTime 'Modification time' = DATA DATETIME (SerialNumberLog) IN id;
+date 'Date modified' (SerialNumberLog d) = DATE (dateTime (d));
+time 'Modified time' (SerialNumberLog d) = TIME (dateTime (d));
 
-changes 'Изменение' =  DATA STRING[250] (SerialNumberLog);
+changes 'Change' = DATA STRING [250] (SerialNumberLog);
 
-getLicenseKey (STRING[250] number) {
+getLicenseKey (STRING [250] number) {
     
     NEW l = SerialNumberLog {
         
-        equipmentSerial(l) <- equipmentSerial(number);
-        computer(l) <- currentComputer();
-        user(l) <- currentUser(); 
-        dateTime(l) <- currentDateTime();
-        changes(l) <- 'Запрос на получение лицензионного ключа';   
+        equipmentSerial (l) <- equipmentSerial (number);
+        computer (l) <- currentComputer ();
+        user (l) <- currentUser ();
+        dateTime (l) <- currentDateTime ();
+        changes (l) <- 'Request for a license key';
     }
     APPLY NESTED LOCAL;
     
-    IF NOT equipment(equipmentSerial(number)) THEN {
-        EXPORT FROM 'Оборудование не найдено';
+    IF NOT equipment (equipmentSerial (number)) THEN {
+        EXPORT FROM 'No equipment found';
         RETURN;
     }
-    EXPORT JSON FROM key = generateLicense(equipmentID(subjectType(equipment(equipmentSerial(number)))), number);
-} @@api;
+    EXPORT JSON FROM key = generateLicense (equipmentID (subjectType (equipment (equipmentSerial (number)))), number);
+} @@ api;
 
-FORM serialNumberLog 'Лог серийного номера'
+FORM serialNumberLog 'Serial number log'
     OBJECTS o = SerialNumberLog PANEL
-    PROPERTIES(o) hostnameComputer, loginUser, nameContact, date, time
+    PROPERTIES (o) hostnameComputer, loginUser, nameContact, date, time
     
     EDIT SerialNumberLog OBJECT o
 ;
@@ -69,9 +69,9 @@ FORM serialNumberLog 'Лог серийного номера'
 EXTEND FORM equipment
     OBJECTS l = SerialNumberLog
     PROPERTIES (l) READONLY date, time, hostnameComputer, loginUser, nameContact, numberSerial
-    FILTERS equipment(l) == o
-    FILTERGROUP serial FILTER 'По серийному номеру' equipmentSerial(l) == s
-    ORDERS date(l), time(l)
+    FILTERS equipment (l) == o
+    FILTERGROUP serial FILTER 'By serial number' equipmentSerial (l) == s
+    ORDERS date (l), time (l)
 ;
 
 DESIGN equipment {
@@ -79,8 +79,8 @@ DESIGN equipment {
         NEW tables AFTER BOX (o) {
             type = SPLITH;
             fill = 1;
-            MOVE BOX (s) { fill = 1; }
-            MOVE BOX (l) { fill = 3; caption = 'Лог запросов на получение лицензионного ключа'; }
+            MOVE BOX (s) {fill = 1; }
+            MOVE BOX (l) {fill = 3; caption = 'Log of requests for obtaining a license key'; }
         }
     }
 }
