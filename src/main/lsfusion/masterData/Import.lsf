@@ -1,14 +1,14 @@
 MODULE Import;
 
-documentPath 'Путь к папке с документами' = DATA STRING[250]();
+documentPath 'Path to document folder' = DATA STRING [250] ();
 
-EXTEND FORM migrationData PROPERTIES() documentPath;
+EXTEND FORM migrationData PROPERTIES () documentPath;
 
 DESIGN migrationData {
-    OBJECTS {
-        NEW importDocuments {
-            caption = 'Документы';
-            MOVE PROPERTY(documentPath());
-        }
-    }
+     OBJECTS {
+         NEW importDocuments {
+             caption = 'Documents';
+             MOVE PROPERTY (documentPath ());
+         }
+     }
 }
