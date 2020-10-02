@@ -4,46 +4,46 @@ REQUIRE LegalEntity;
 
 NAMESPACE Account;
 
-CLASS ABSTRACT AccountLedger 'Движение по счёту';
-TABLE accountLedger(AccountLedger);
+CLASS ABSTRACT AccountLedger 'Account movement';
+TABLE accountLedger (AccountLedger);
 
-account = ABSTRACT Account(AccountLedger) MATERIALIZED INDEXED;
-date 'Дата' = ABSTRACT DATE (AccountLedger) MATERIALIZED;
-note 'Примечание' = ABSTRACT ISTRING[250](AccountLedger) MATERIALIZED;
-sum 'Сумма' = ABSTRACT NUMERIC[16,5](AccountLedger) MATERIALIZED;
+account = ABSTRACT Account (AccountLedger) MATERIALIZED INDEXED;
+date 'Date' = ABSTRACT DATE (AccountLedger) MATERIALIZED;
+note 'Note' = ABSTRACT ISTRING [250] (AccountLedger) MATERIALIZED;
+sum 'Amount' = ABSTRACT NUMERIC [16,5] (AccountLedger) MATERIALIZED;
 
-balance 'Остаток' (Account a) = GROUP SUM sum(AccountLedger l) BY account(l) MATERIALIZED;
-balanceCurrency 'Остаток в валюте' (Account a) = round2(balance(a) * OVERRIDE (rateOn(defaultTypeExchange(), currency(a), currentDate())), 1);
+balance 'Balance' (Account a) = GROUP SUM sum (AccountLedger l) BY account (l) MATERIALIZED;
+balanceCurrency 'Currency balance' (Account a) = round2 (balance (a) * OVERRIDE (rateOn (defaultTypeExchange (), currency (a), currentDate ())), 1);
 
-balance 'Остаток' (Account a, DATE d) = balance(a) (-) [GROUP SUM sum(AccountLedger l) IF iterate(date(l), sum(d, 1), currentDate()) BY account(l)](a);
-balanceAccounts 'Сумма остатков' (DATE d) = GROUP SUM balance(Account a, d);
+balance 'Balance' (Account a, DATE d) = balance (a) (-) [GROUP SUM sum (AccountLedger l) IF iterate (date (l), sum (d, 1), currentDate ()) BY account (l )] (a);
+balanceAccounts 'Amount of balances' (DATE d) = GROUP SUM balance (Account a, d);
 
-balanceCurrency 'Остаток в валюте' (Account a, DATE d) = balance(a, d) * OVERRIDE rateOn(defaultTypeExchange(), currency(a), d), 1;
-balanceAccountsCurrency 'Сумма остатков в валюте' (DATE d) = GROUP SUM balanceCurrency(Account a, d);
+balanceCurrency 'Currency balance' (Account a, DATE d) = balance (a, d) * OVERRIDE rateOn (defaultTypeExchange (), currency (a), d), 1;
+balanceAccountsCurrency 'Amount of balances in currency' (DATE d) = GROUP SUM balanceCurrency (Account a, d);
 
-FORM accountBalances 'Остатки по счетам'
+FORM accountBalances 'Account Balances'
     OBJECTS a = Account
     PROPERTIES (a) READONLY nameLegalEntity, number, nameBank, addressBank, MFOBank, note, rate, dateTo, balance, balanceCurrency
-    ORDERS nameLegalEntity(a)
-    FILTERGROUP active FILTER 'Активные' active(a) DEFAULT 
+    ORDERS nameLegalEntity (a)
+    FILTERGROUP active FILTER 'Active' active (a) DEFAULT
     
     OBJECTS l = AccountLedger
     PROPERTIES (l) READONLY date, note, sum
-    ORDERS date(l) DESC
-    FILTERS account(l) == a, balance(a)
+    ORDERS date (l) DESC
+    FILTERS account (l) == a, balance (a)
     
-    OBJECTS dates = (df = DATE, dt = DATE) PANEL 
-    PROPERTIES 'Дата с' = VALUE (df), 'Дата по' = VALUE (dt)
+    OBJECTS dates = (df = DATE, dt = DATE) PANEL
+    PROPERTIES 'Date from' = VALUE (df), 'Date to' = VALUE (dt)
     
-    OBJECTS d = DATE 
-    PROPERTIES vd 'Дата' = VALUE(d), balance(a, d), balanceCurrency(a, d)
-    ORDERS vd DESC 
-    FILTERS iterate(d, df, dt)
+    OBJECTS d = DATE
+    PROPERTIES vd 'Date' = VALUE (d), balance (a, d), balanceCurrency (a, d)
+    ORDERS vd DESC
+    FILTERS iterate (d, df, dt)
     
-    OBJECTS dd = DATE 
-    PROPERTIES dd 'Дата' = VALUE (dd), balanceAccounts(dd), balanceAccountsCurrency(dd)
-    ORDERS dd DESC 
-    FILTERS iterate(dd, df, dt)
+    OBJECTS dd = DATE
+    PROPERTIES dd 'Date' = VALUE (dd), balanceAccounts (dd), balanceAccountsCurrency (dd)
+    ORDERS dd DESC
+    FILTERS iterate (dd, df, dt)
 ;
 
 DESIGN accountBalances {
@@ -57,13 +57,13 @@ DESIGN accountBalances {
                 fill = 1;
                 MOVE BOX (l);
                 NEW balances {
-                    caption = 'Динамика остатка';
+                    caption = 'Stock dynamics';
                     MOVE BOX (dates);
                     NEW balance {
                         type = CONTAINERH;
                         fill = 1;
-                        MOVE BOX (d) { caption = 'По счёту'; }
-                        MOVE BOX (dd) { caption = 'По всем счетам'; }
+                        MOVE BOX (d) {caption = 'By Count'; }
+                        MOVE BOX (dd) {caption = 'For all accounts'; }
                     }
                 }
             }
