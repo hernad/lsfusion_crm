@@ -5,42 +5,42 @@ REQUIRE IssueLog, ProjectExternal, Dashboard, DocIssue;
 NAMESPACE Project;
 
 newStatus = DATA IssueStatus ();
-nameNewStatus 'Новый статус' () = name(newStatus());
+nameNewStatus 'New status' () = name (newStatus ());
 
-EXTEND FORM options PROPERTIES() nameNewStatus;
-DESIGN options { commons { MOVE PROPERTY(nameNewStatus()); } }
+EXTEND FORM options PROPERTIES () nameNewStatus;
+DESIGN options {commons {MOVE PROPERTY (nameNewStatus ()); }}
 
-dateTimeCreated(i) <- currentDateTime() WHEN SET(i IS Issue); 
-author(i) <- currentUser() WHEN SET(i IS Issue); 
-dateFrom(i) <- currentDate() WHEN SET(i IS Issue); 
-status(i) <- newStatus() WHEN SET(i IS Issue);
+dateTimeCreated (i) <- currentDateTime () WHEN SET (i IS Issue);
+author (i) <- currentUser () WHEN SET (i IS Issue);
+dateFrom (i) <- currentDate () WHEN SET (i IS Issue);
+status (i) <- newStatus () WHEN SET (i IS Issue);
 
-FORM issueDashboard 'Мои задачи'
+FORM issueDashboard 'My Tasks'
 
-    OBJECTS o = Issue LAST 
-    PROPERTIES(o) READONLY number, name, descriptionString, dateTimeCreated, dateTimeUpdated, dateFrom, dateTo, doneRatio, estimatedHours, nameProject, 
+    OBJECTS o = Issue LAST
+    PROPERTIES (o) READONLY number, name, descriptionString, dateTimeCreated, dateTimeUpdated, dateFrom, dateTo, doneRatio, estimatedHours, nameProject,
                            nameCustomer, numberDocument, nameAuthor, nameAssignedTo, nameTracker, nameStatus
-    PROPERTIES(o) NEWSESSION NEW
-    PROPERTIES(o) SHOWIF NOT external(o) NEWSESSION EDIT, DELETE
+    PROPERTIES (o) NEWSESSION NEW
+    PROPERTIES (o) SHOWIF NOT external (o) NEWSESSION EDIT, DELETE
     
-    FILTERGROUP open FILTER 'Открытые' NOT isClosed(status(o)) DEFAULT 
-    FILTERGROUP inner FILTER 'Внутренние' NOT external(o) DEFAULT 
-    FILTERGROUP my FILTER 'Мои задачи' assignedTo(o) = currentUser() OR author(o) = currentUser() DEFAULT 
-                   FILTER 'Назначенные мне' assignedTo(o) = currentUser()
-                   FILTER 'Созданные мною' author(o) = currentUser()
+    FILTERGROUP open FILTER 'Open' NOT isClosed (status (o)) DEFAULT
+    FILTERGROUP inner FILTER 'Internal' NOT external (o) DEFAULT
+    FILTERGROUP my FILTER 'My Tasks' assignedTo (o) = currentUser () OR author (o) = currentUser () DEFAULT
+                   FILTER 'Assigned to me' assignedTo (o) = currentUser ()
+                   FILTER 'Created by me' author (o) = currentUser ()
                    
-    ORDERS number(o)
+    ORDERS number (o)
     
     OBJECTS l = IssueLog
     PROPERTIES (l) READONLY dateTime, nameUser, changes, note
-    FILTERS issue(l) == o
+    FILTERS issue (l) == o
 ;
 
 DESIGN issueDashboard {
     OBJECTS {
         type = SPLITV;
-        BOX (o) { fill = 3; }
-        BOX (l) { fill = 1; }
+        BOX (o) {fill = 3; }
+        BOX (l) {fill = 1; }
     }
 }
 
@@ -50,36 +50,36 @@ NAVIGATOR {
     }
 }
 
-note 'Подписан на уведомления' = DATA BOOLEAN (Project, IssueStatus, Employee);
+note 'Subscribed to notifications' = DATA BOOLEAN (Project, IssueStatus, Employee);
 
-WHEN CHANGED (status(Issue i)) AND (note(project(i), status(i), Employee e) OR note(project(i), PREV (status(i)), e)) DO {
-    EMAIL 
-        SUBJECT CONCAT ' ', 'Изменение статуса задачи', number(i)
-        TO email(e)
-        BODY CONCAT ' ', 'Статус задачи', number(i), 'по проекту ' + name(project(i)), 'изменен', 'с ' + PREV (nameStatus(i)), 'на ' + nameStatus(i);
+WHEN CHANGED (status (Issue i)) AND (note (project (i), status (i), Employee e) OR note (project (i), PREV (status (i)), e)) DO {
+    EMAIL
+        SUBJECT CONCAT '', 'Change task status', number (i)
+        TO email (e)
+        BODY CONCAT '', 'Task status', number (i), 'by project' + name (project (i)), 'changed', 'from' + PREV (nameStatus (i)), 'to' + nameStatus ( i);
 }
 
-FORM projectNotifications 'Уведомления по проектам'
+FORM projectNotifications 'Project notifications'
     OBJECTS p = Project
     PROPERTIES (p) READONLY id, name, identifier, nameCustomer, inactive, nameExternal
-    FILTERGROUP active FILTER 'Активные' NOT inactive(p) DEFAULT 
+    FILTERGROUP active FILTER 'Active' NOT inactive (p) DEFAULT
     
     OBJECTS e = Employee PANEL
-    FILTERS e == currentUser()
+    FILTERS e == currentUser ()
     
     OBJECTS s = IssueStatus
-    PROPERTIES note(p, s, e) DRAW s
-    PROPERTIES (s) READONLY name, order, isClosed 
-    ORDERS order(s)
+    PROPERTIES note (p, s, e) DRAW s
+    PROPERTIES (s) READONLY name, order, isClosed
+    ORDERS order (s)
 ;
 
 DESIGN projectNotifications {
-    OBJECTS { 
+    OBJECTS {
         NEW main FIRST {
             fill = 1;
             type = SPLITH;
-            MOVE BOX (p) { fill = 3; }
-            MOVE BOX (s) { fill = 1; }
+            MOVE BOX (p) {fill = 3; }
+            MOVE BOX (s) {fill = 1; }
         }
     }
 }
