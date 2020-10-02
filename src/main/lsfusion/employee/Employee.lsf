@@ -4,36 +4,36 @@ REQUIRE Contact, Security;
 
 NAMESPACE Contact;
 
-CLASS Employee 'Сотрудник' : Contact.Contact, CustomUser;
-TABLE employee(Employee);
+CLASS Employee 'Employee': Contact.Contact, CustomUser;
+TABLE employee (Employee);
 
-name 'Имя' (Employee e) = Authentication.name(e) CHARWIDTH 15;
-number 'Номер' = DATA STRING[15] (Employee);
-employeeNumber = GROUP MAX Employee e BY number(e);
+name 'Name' (Employee e) = Authentication.name (e) CHARWIDTH 15;
+number 'Number' = DATA STRING [15] (Employee);
+employeeNumber = GROUP MAX Employee e BY number (e);
 
-employee (STRING[15] id) = GROUP AGGR Employee e BY id(e);
+employee (STRING [15] id) = GROUP AGGR Employee e BY id (e);
 
-inactive 'Неактивный' = DATA BOOLEAN (Employee);
-active 'Активный' (Employee e) = NOT inactive(e);
+inactive 'Inactive' = DATA BOOLEAN (Employee);
+active 'Active' (Employee e) = NOT inactive (e);
 
-//in 'Вкл.' = DATA BOOLEAN (Employee, UserRole);
-addRoles 'Дополнительные роли' (Employee e) = GROUP CONCAT name(UserRole r) IF in(e, r), ', ' CHARWIDTH 15;
+// in 'On' = DATA BOOLEAN (Employee, UserRole);
+addRoles 'Additional Roles' (Employee e) = GROUP CONCAT name (UserRole r) IF in (e, r), ',' CHARWIDTH 15;
 
-FORM dialogEmployeeRoles 'Роли'
-    OBJECTS e = Employee PANEL 
+FORM dialogEmployeeRoles 'Roles'
+    OBJECTS e = Employee PANEL
     OBJECTS r = UserRole
-    PROPERTIES in(e, r), name(r) READONLY 
+    PROPERTIES in (e, r), name (r) READONLY
 ;
 
-FORM employee 'Сотрудник'
+FORM employee 'Employee'
     OBJECTS o = Employee PANEL
-    PROPERTIES(o) id, number, login, sha256Password ON CHANGE changeSHA256Password(o), nameMainRole, firstName, lastName, middleName,
-                  shortName, fullName, fullNameRp, namePosition, nameLegalEntity, nameCustomer, email, phone, skype, note, inactive, authorisedDocument,
-                  addRoles ON CHANGE { SHOW dialogEmployeeRoles OBJECTS e = o; }
+    PROPERTIES (o) id, number, login, sha256Password ON CHANGE changeSHA256Password (o), nameMainRole, firstName, lastName, middleName,
+                  shortName, fullName, fullNameRp, namePosition, nameLegalEntity, nameCustomer, email, phone, skype, note, inactive, authorizedDocument,
+                  addRoles ON CHANGE {SHOW dialogEmployeeRoles OBJECTS e = o; }
         
     OBJECTS p = Phone
-    PROPERTIES (p) nameType, number, NEW, DELETE 
-    FILTERS contact(p) == o
+    PROPERTIES (p) nameType, number, NEW, DELETE
+    FILTERS contact (p) == o
     
     EDIT Employee OBJECT o
 ;
@@ -44,91 +44,92 @@ DESIGN employee {
             type = CONTAINERH;
             alignment = STRETCH;
             NEW position {
-                caption = 'Основные параметры';
-                MOVE PROPERTY (id(o));
-                MOVE PROPERTY (number(o));
-                MOVE PROPERTY (namePosition(o));
+                caption = 'Main parameters';
+                MOVE PROPERTY (id (o));
+                MOVE PROPERTY (number (o));
+                MOVE PROPERTY (namePosition (o));
             }
             NEW login {
-                caption = 'Системные параметры';
-                MOVE PROPERTY (login(o));
-                MOVE PROPERTY (sha256Password(o));
-                MOVE PROPERTY (nameMainRole(o));
-                MOVE PROPERTY (addRoles(o));
+                caption = 'System Parameters';
+                MOVE PROPERTY (login (o));
+                MOVE PROPERTY (sha256Password (o));
+                MOVE PROPERTY (nameMainRole (o));
+                MOVE PROPERTY (addRoles (o));
             }
             NEW client {
                 flex = 1;
-                caption = 'Клиент';
-                MOVE PROPERTY (nameCustomer(o));
-                MOVE PROPERTY (nameLegalEntity(o));
+                caption = 'Client';
+                MOVE PROPERTY (nameCustomer (o));
+                MOVE PROPERTY (nameLegalEntity (o));
             }
         }
         NEW names {
             type = CONTAINERH;
-            caption = 'Имя';
+            caption = 'Name';
             alignment = STRETCH;
             NEW name {
                 width = 300;
-                MOVE PROPERTY (lastName(o));
-                MOVE PROPERTY (firstName(o));
-                MOVE PROPERTY (middleName(o));
+                MOVE PROPERTY (lastName (o));
+                MOVE PROPERTY (firstName (o));
+                MOVE PROPERTY (middleName (o));
             }
             NEW fio {
                 flex = 1;
-                MOVE PROPERTY (shortName(o));
-                MOVE PROPERTY (fullName(o));
-                MOVE PROPERTY (fullNameRp(o));
+                MOVE PROPERTY (shortName (o));
+                MOVE PROPERTY (fullName (o));
+                MOVE PROPERTY (fullNameRp (o));
             }
         }
         NEW add {
-            caption = 'Контакты';
+            caption = 'Contacts';
             alignment = STRETCH;
-            MOVE PROPERTY (email(o));
-            MOVE PROPERTY (phone(o)) { charWidth = 20;}
-            MOVE PROPERTY (skype(o));
+            MOVE PROPERTY (email (o));
+            MOVE PROPERTY (phone (o)) {charWidth = 20;}
+            MOVE PROPERTY (skype (o));
         }
         NEW dop {
-            caption = 'Дополнительные параметры';
+            caption = 'Additional options';
             alignment = STRETCH;
             NEW note {
                 alignment = STRETCH;
                 type = CONTAINERH;
-                MOVE PROPERTY (inactive(o));
-                MOVE PROPERTY (note(o));
+                MOVE PROPERTY (inactive (o));
+                MOVE PROPERTY (note (o));
             }
-            MOVE PROPERTY (authorisedDocument(o));
+            MOVE PROPERTY (authorisedDocument (o));
         }
         MOVE BOX (p);
     }
 }
-FORM employees 'Сотрудники'
+
+FORM employees 'Employees'
     OBJECTS o = Employee
-    PROPERTIES(o) READONLYIF isReadonly() id, number, login, name, namePosition, nameLegalEntity, nameMainRole, addRoles, email, 
-                                          phone, addPhones, skype, note, inactive, authorisedDocument
-    PROPERTIES(o) NEWSESSION NEW, EDIT, DELETE
-    ORDERS name(o)
+    PROPERTIES (o) READONLYIF isReadonly () id, number, login, name, namePosition, nameLegalEntity, nameMainRole, addRoles, email,
+                                          phone, addPhones, skype, note, inactive, authorizedDocument
+    PROPERTIES (o) NEWSESSION NEW, EDIT, DELETE
+    ORDERS name (o)
     
-    FILTERGROUP active FILTER 'Активные' NOT inactive(o) DEFAULT 
+    FILTERGROUP active FILTER 'Active' NOT inactive (o) DEFAULT
 ;
 
-@extendFormEditable(employees);
+@extendFormEditable (employees);
 
-FORM dialogEmployees 'Сотрудники'
+FORM dialogEmployees 'Employees'
     OBJECTS o = Employee
-    PROPERTIES(o) READONLY id, number, login, name, namePosition, nameLegalEntity, email, phone, addPhones, skype, note, inactive, authorisedDocument
-    ORDERS name(o)
+    PROPERTIES (o) READONLY id, number, login, name, namePosition, nameLegalEntity, email, phone, addPhones, skype, note, inactive, authorizedDocument
+    ORDERS name (o)
     
-    FILTERGROUP active FILTER 'Активные' NOT inactive(o) DEFAULT
+    FILTERGROUP active FILTER 'Active' NOT inactive (o) DEFAULT
     
     LIST Employee OBJECT o
 ;
 
 NAVIGATOR {
-    NEW FOLDER employeeFolder 'Персонал' BEFORE masterData WINDOW toolbar IMAGE 'employee.png' {
+    NEW FOLDER employeeFolder 'Personnel' BEFORE masterData WINDOW toolbar IMAGE 'employee.png' {
         NEW employees;
     }
 }
 
-skipCustomer(Employee e) += TRUE IF e IS Employee;
+skipCustomer (Employee e) + = TRUE IF e IS Employee;
 
-CONSTRAINT legalEntity(Employee e) AND e IS Employee AND NOT isCompany(legalEntity(e)) CHECKED BY legalEntity[Employee] MESSAGE 'Организация сотрудника не является компанией';
+CONSTRAINT legalEntity (Employee e) AND e IS Employee AND NOT isCompany (legalEntity (e)) CHECKED BY legalEntity [Employee] MESSAGE 'The employee's organization is not a company';
